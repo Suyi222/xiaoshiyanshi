@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌳 小园丁的试验田</title>
+    <style>
+        :root {
+            --bg: #f5faf5;
+            --panel: #ffffff;
+            --border: #c8e6c8;
+            --text: #2d3a2d;
+            --accent: #4a8f4a;
+            --green: #3d7a3d;
+            --shadow: 0 4px 15px rgba(0,0,0,0.05);
+            --petal: #88cc88;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.5s, color 0.5s;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* 飘落物 */
+        .petal {
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
+            animation: fall linear forwards;
+            opacity: 0.7;
+            font-size: 20px;
+        }
+        @keyframes fall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 0.7; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+        @keyframes fallSnow {
+            0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 0.8; }
+            100% { transform: translateY(110vh) translateX(40px) rotate(360deg); opacity: 0; }
+        }
+
+        /* 顶部菜单栏 */
+        .menu-bar {
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: var(--shadow);
+            z-index: 10;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            position: relative;
+        }
+        .logo { font-size: 20px; font-weight: bold; color: var(--green); cursor: pointer; }
+        .menu-btn {
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 8px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .menu-btn.active { background: var(--green); color: white; border-color: var(--green); }
+        .spacer { flex: 1; }
+        .current-app { font-size: 13px; opacity: 0.6; white-space: nowrap; }
+
+        /* 时间显示 */
+        .time-display {
+            text-align: center;
+            font-size: 14px;
+            opacity: 0.7;
+            margin: 8px 0 2px;
+            z-index: 2;
+            position: relative;
+        }
+
+        /* 主题切换面板 */
+        .theme-panel-container {
+            position: relative;
+            display: inline-block;
+        }
+        .theme-toggle-btn {
+            background: transparent;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        .theme-toggle-btn:hover { background: var(--border); }
+        .theme-panel {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 200px;
+        }
+        .theme-panel.show { display: block; }
+        .theme-panel h4 {
+            font-size: 14px;
+            opacity: 0.6;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .theme-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        .theme-option:hover { background: var(--border); }
+        .theme-option.active-theme { background: var(--border); font-weight: bold; }
+        .theme-option .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 分类区域 */
+        .section { margin-bottom: 30px; }
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+            margin-bottom: 15px;
+        }
+        .section-header h2 { font-size: 20px; color: var(--green); }
+        .section-header .arrow { font-size: 16px; transition: transform 0.3s; }
+        .section-header .count { font-size: 14px; opacity: 0.5; }
+        .section.collapsed .card-grid { display: none; }
+        .section.collapsed .arrow { transform: rotate(-90deg); }
+
+        /* 卡片网格 */
+        .card-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 25px 20px;
+            width: 180px;
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: var(--shadow);
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+        .card:hover { border-color: var(--accent); transform: translateY(-4px); }
+        .card .icon { font-size: 40px; }
+        .card .name { font-size: 16px; font-weight: bold; }
+        .card .tag { font-size: 11px; opacity: 0.6; }
+        .card .delete-btn {
+            position: absolute; top: 8px; right: 8px;
+            background: transparent; border: none;
+            color: #ccc; cursor: pointer; font-size: 16px;
+            padding: 2px 6px; border-radius: 50%;
+            opacity: 0; transition: all 0.2s;
+        }
+        .card:hover .delete-btn { opacity: 1; }
+        .card .delete-btn:hover { color: #e57373; background: #fff0f0; }
+        .card.add-card {
+            border-style: dashed; border-color: var(--accent);
+            color: var(--accent); opacity: 0.8;
+        }
+        .card.add-card:hover { opacity: 1; background: #f0faf0; }
+
+        /* 编辑器视图 */
+        .editor-view {
+            display: flex; width: 100%; height: 100%; gap: 0;
+        }
+        .editor-panel {
+            width: 50%; display: flex; flex-direction: column;
+            border-right: 1px solid var(--border);
+        }
+        .editor-panel textarea {
+            flex: 1; background: #1a1a2e; color: #e0e0e0;
+            border: none; padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px; resize: none; outline: none; line-height: 1.6;
+        }
+        .preview-panel {
+            width: 50%; display: flex; flex-direction: column;
+        }
+        .preview-panel iframe { flex: 1; border: none; background: white; }
+        .editor-toolbar {
+            background: var(--panel); padding: 10px 20px;
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .editor-toolbar button {
+            padding: 8px 16px; border-radius: 20px;
+            border: none; cursor: pointer; font-size: 13px; font-weight: bold;
+        }
+        .btn-run { background: var(--green); color: white; }
+        .btn-save { background: var(--accent); color: white; }
+
+        /* 底部格言 */
+        .footer-quote {
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+            opacity: 0.6;
+            z-index: 2;
+            cursor: pointer;
+            user-select: none;
+            transition: opacity 0.3s;
+            position: relative;
+        }
+        .footer-quote:hover { opacity: 1; }
+
+        @media (max-width: 768px) {
+            .editor-view { flex-direction: column; }
+            .editor-panel { width: 100%; height: 50%; border-right: none; border-bottom: 1px solid var(--border); }
+            .preview-panel { width: 100%; height: 50%; }
+        }
+        @media (max-width: 500px) {
+            .card { width: 140px; height: 140px; padding: 15px; }
+            .card .icon { font-size: 30px; }
+            .card .name { font-size: 13px; }
+            .main-content { padding: 20px; }
+        }
+        /* 时间日期节气 */
+        .time-bar {
+            text-align: center;
+            font-size: 14px;
+            opacity: 0.7;
+            margin: 8px 0 2px;
+            z-index: 2;
+            position: relative;
+            cursor: default;
+        }
+        /* 小精灵 */
+        .fairy {
+            position: fixed; bottom: 20px; right: 20px;
+            z-index: 50; cursor: pointer; user-select: none;
+            transition: transform 0.3s;
+        }
+        .fairy:hover { transform: scale(1.1); }
+        .fairy .icon { font-size: 40px; }
+        .fairy .bubble {
+            position: absolute; bottom: 50px; right: 0;
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 16px; padding: 10px 14px;
+            font-size: 13px; max-width: 200px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            animation: fadeIn 0.3s ease-out;
+            white-space: nowrap;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* 太极图标 */
+        .taiji-icon {
+            font-size: 28px; cursor: pointer; transition: transform 0.2s;
+            user-select: none; z-index: 2; display: inline-block;
+            vertical-align: middle; margin-left: 10px;
+        }
+        .taiji-icon:hover { transform: rotate(20deg); }
+        .taiji-icon.used { opacity: 0.5; cursor: default; }
+        .taiji-icon.used:hover { transform: none; }
+        /* 占卜面板 */
+        .divination-panel {
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--panel); border: 2px solid var(--border);
+            border-radius: 20px; padding: 25px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.15); z-index: 200;
+            text-align: center; max-width: 400px; width: 90%;
+        }
+        .divination-panel.show { display: block; }
+        .divination-panel .close-btn {
+            position: absolute; top: 10px; right: 15px;
+            background: transparent; border: none; font-size: 20px;
+            cursor: pointer; color: var(--text); opacity: 0.5;
+        }
+        .divination-panel .close-btn:hover { opacity: 1; }
+        .yao-line {
+            font-size: 22px; margin: 3px 0;
+            font-family: monospace; letter-spacing: 4px;
+        }
+        .yao-line.born { animation: popIn 0.3s ease-out; }
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .btn-shake {
+            background: var(--green); color: white; border: none;
+            padding: 12px 28px; border-radius: 25px;
+            cursor: pointer; font-size: 16px; font-weight: bold;
+            margin-top: 15px; transition: all 0.2s;
+        }
+        .btn-shake:hover { opacity: 0.9; }
+        .btn-shake:active { transform: scale(0.97); }
+        .result-area {
+            margin-top: 15px; text-align: left;
+            font-size: 14px; line-height: 1.8;
+        }
+        .result-area .gua-name {
+            font-size: 20px; font-weight: bold;
+            color: var(--green); text-align: center; margin-bottom: 8px;
+        }
+        .result-area .yi, .result-area .ji {
+            margin-top: 10px; padding: 8px 12px;
+            border-radius: 10px; background: #f0faf0;
+        }
+        .result-area .ji { background: #fff5f5; }
+        .overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); z-index: 150;
+        }
+        .overlay.show { display: block; }
+    </style>
+</head>
+<body>
+    <!-- 飘落花瓣容器 -->
+    <div id="petalContainer"></div>
+
+    <!-- 顶部菜单栏 -->
+    <div class="menu-bar">
+        <span class="logo" onclick="showLibrary()">🌳 小园丁的试验田</span>
+        <button class="menu-btn active" id="btn-library" onclick="showLibrary()">🌱 试验田</button>
+        <button class="menu-btn" id="btn-editor" onclick="showEditor()">🧑‍🌾 栽培管理</button>
+        <button class="menu-btn" id="btn-runapp" onclick="showRunApp()" style="display:none;">🍅 收获中</button>
+        <span class="spacer"></span>
+        <!-- 四季调色盘 -->
+        <div class="theme-panel-container">
+            <button class="theme-toggle-btn" onclick="toggleThemePanel()" title="四季调色盘">🎨</button>
+            <div class="theme-panel" id="themePanel">
+                <h4>🎨 四季调色盘</h4>
+                <div class="theme-option" onclick="applyTheme('spring')" id="opt-spring">
+                    <span class="dot" style="background:#ffb7c5;"></span> 🌸 春 · 樱花粉
+                </div>
+                <div class="theme-option" onclick="applyTheme('summer')" id="opt-summer">
+                    <span class="dot" style="background:#88cc88;"></span> 🍃 夏 · 小园丁绿
+                </div>
+                <div class="theme-option" onclick="applyTheme('autumn')" id="opt-autumn">
+                    <span class="dot" style="background:#f0c060;"></span> 🍂 秋 · 落日金
+                </div>
+                <div class="theme-option" onclick="applyTheme('winter')" id="opt-winter">
+                    <span class="dot" style="background:#8899cc;"></span> 🌙 冬 · 夜晚模式
+                </div>
+            </div>
+        </div>
+        <span class="current-app" id="currentAppName"></span>
+    </div>
+
+      <!-- 时间日期节气 -->
+        <div class="time-bar">
+        <span id="timeBarText">🕐 加载中...</span>
+        <span class="taiji-icon" id="taijiIcon" onclick="startDivination()" title="每日一卦">☯️</span>
+    </div>
+
+ <!-- 主视图 -->
+    <div class="main-content" id="mainContent">
+        <!-- 试验田视图 -->
+        <div id="libraryView">
+            <!-- 小果园 -->
+            <div class="section" id="sectionOrchard">
+                <div class="section-header" onclick="toggleSection('sectionOrchard')">
+                    <span class="arrow">▼</span>
+                    <h2>🧰 小果园</h2>
+                    <span class="count" id="orchardCount"></span>
+                </div>
+                <div class="card-grid" id="orchardGrid"></div>
+            </div>
+            <!-- 菜篮子 -->
+            <div class="section" id="sectionBasket">
+                <div class="section-header" onclick="toggleSection('sectionBasket')">
+                    <span class="arrow">▼</span>
+                    <h2>🎮 菜篮子</h2>
+                    <span class="count" id="basketCount"></span>
+                </div>
+                <div class="card-grid" id="basketGrid"></div>
+            </div>
+        </div>
+
+        <!-- 栽培管理视图 -->
+        <div class="editor-view" id="editorView" style="display:none;">
+            <div class="editor-panel">
+                <div class="editor-toolbar">
+                    <span style="font-size:13px;opacity:0.6;">🧑‍🌾 育苗间</span>
+                    <span style="flex:1;"></span>
+                    <button class="btn-run" onclick="runEditorCode()">▶️ 试收获</button>
+                    <button class="btn-save" onclick="saveEditorCode()">💾 收入谷仓</button>
+                </div>
+                <textarea id="editorTextarea">欢迎来到育苗间！你想种下怎样的植物？</textarea>
+            </div>
+            <div class="preview-panel">
+                <iframe id="previewFrame"></iframe>
+            </div>
+        </div>
+
+        <!-- 收获视图 -->
+        <div id="runAppView" style="display:none;width:100%;height:100%;">
+            <iframe id="runAppFrame" style="width:100%;height:100%;border:none;"></iframe>
+        </div>
+    </div>
+
+    <!-- 底部格言 -->
+    <div class="footer-quote" id="footerQuote" onclick="changeQuote()"></div>
+
+    <script>
+        // ============ 数据管理 ============
+        function loadApps() {
+            const saved = localStorage.getItem('myLabApps_v4');
+            return saved ? JSON.parse(saved) : [];
+        }
+        function saveApps(apps) {
+            localStorage.setItem('myLabApps_v4', JSON.stringify(apps));
+        }
+        function loadHarvestCount() {
+            return parseInt(localStorage.getItem('harvestCount') || '0');
+        }
+        function addHarvest() {
+            let c = loadHarvestCount() + 1;
+            localStorage.setItem('harvestCount', c);
+        }
+
+        function getDefaultApps() {
+            return [
+                { name: '番茄钟', icon: '🍅', category: 'orchard', code: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><style>body{background:#0a1a0a;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;font-family:sans-serif;flex-direction:column;}.timer{font-size:80px;color:#66bb66;margin:20px;}.btn{background:#66bb66;color:#000;border:none;padding:14px 35px;font-size:18px;border-radius:30px;cursor:pointer;margin:8px;}</style></head><body><div class="timer" id="t">25:00</div><button class="btn" onclick="toggle()">▶️ 开始</button><script>let m=25,s=0,iv=null,r=false;function u(){document.getElementById('t').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');}function toggle(){if(r){clearInterval(iv);r=false;document.querySelector('.btn').textContent='▶️ 继续';}else{iv=setInterval(()=>{if(s===0){if(m===0){clearInterval(iv);r=false;document.querySelector('.btn').textContent='🎉 完成!';m=25;s=0;u();return;}m--;s=59;}else{s--;}u();},1000);r=true;document.querySelector('.btn').textContent='⏸️ 暂停';}}u();<\/script></body></html>` },
+                { name: '烟花颜文字', icon: '🎆', category: 'basket', code: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"><title>🎆 烟花颜文字</title><style>body{margin:0;background:#0a0a2a;overflow:hidden;height:100vh;cursor:crosshair;font-family:sans-serif;}canvas{display:block;}.hint{position:fixed;bottom:30px;width:100%;text-align:center;color:rgba(255,255,255,0.6);font-size:16px;pointer-events:none;z-index:10;}.kaomoji-pop{position:fixed;font-size:28px;pointer-events:none;z-index:20;animation:popUp 1.5s ease-out forwards;white-space:nowrap;}@keyframes popUp{0%{opacity:1;transform:translateY(0) scale(0.5);}30%{opacity:1;transform:translateY(-30px) scale(1.2);}100%{opacity:0;transform:translateY(-120px) scale(1);}}</style></head><body><canvas id="canvas"></canvas><div class="hint">✨ 点击屏幕放烟花 ✨</div><script>const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');let W,H;function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}resize();window.addEventListener('resize',resize);class Particle{constructor(x,y,c){this.x=x;this.y=y;this.color=c;let a=Math.random()*Math.PI*2,s=Math.random()*6+2;this.vx=Math.cos(a)*s;this.vy=Math.sin(a)*s;this.life=1;this.decay=Math.random()*0.02+0.01;this.size=Math.random()*3+1;}update(){this.x+=this.vx;this.y+=this.vy;this.vy+=0.05;this.life-=this.decay;}draw(c){c.globalAlpha=this.life;c.fillStyle=this.color;c.beginPath();c.arc(this.x,this.y,this.size,0,Math.PI*2);c.fill();c.globalAlpha=1;}}class Firework{constructor(x,y){this.x=x;this.y=y;let colors=['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff8fe8','#ffb347','#00e5ff','#ff4081','#7c4dff','#ffab40','#69f0ae','#ff80ab'];this.particles=[];let c=colors[Math.floor(Math.random()*colors.length)];for(let i=0;i<80;i++)this.particles.push(new Particle(x,y,c));}update(){this.particles.forEach(p=>p.update());this.particles=this.particles.filter(p=>p.life>0);}draw(c){this.particles.forEach(p=>p.draw(c));}get done(){return this.particles.length===0;}}let fireworks=[];let kaomojis=['(≧▽≦)','(｡♥‿♥｡)','₍ᐢ.ˬ.ᐢ₎','(◕‿◕✿)','☆*:.｡.o(≧▽≦)o.｡.:*☆','(づ｡◕‿‿◕｡)づ','(ᗒᗨᗕ)','(๑˃̵ᴗ˂̵)و','✧٩(ˊωˋ*)و✧','( ˘ ³˘)♥','(⁄ ⁄>⁄ ▽ ⁄<⁄ ⁄)','(╯✧▽✧)╯','(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧'];function spawnKaomoji(x,y){let el=document.createElement('div');el.className='kaomoji-pop';el.textContent=kaomojis[Math.floor(Math.random()*kaomojis.length)];el.style.left=x+'px';el.style.top=y+'px';el.style.color='hsl('+Math.random()*360+',80%,70%)';document.body.appendChild(el);setTimeout(()=>el.remove(),1500);}canvas.addEventListener('click',e=>{fireworks.push(new Firework(e.clientX,e.clientY));spawnKaomoji(e.clientX,e.clientY-20);});canvas.addEventListener('touchstart',e=>{e.preventDefault();let t=e.touches[0];fireworks.push(new Firework(t.clientX,t.clientY));spawnKaomoji(t.clientX,t.clientY-20);});function animate(){ctx.fillStyle='rgba(10,10,42,0.15)';ctx.fillRect(0,0,W,H);for(let i=fireworks.length-1;i>=0;i--){fireworks[i].update();fireworks[i].draw(ctx);if(fireworks[i].done)fireworks.splice(i,1);}requestAnimationFrame(animate);}animate();setTimeout(()=>{fireworks.push(new Firework(W/2,H/3));spawnKaomoji(W/2,H/3-20);},300);<\/script></body></html>` }
+            ];
+        }
+
+        let apps = loadApps();
+        if (apps.length === 0) {
+            apps = getDefaultApps();
+            saveApps(apps);
+        }
+        let currentRunningApp = null;
+        let currentTheme = localStorage.getItem('labTheme') || 'summer';
+
+        // ============ 视图切换 ============
+        function hideAll() {
+            document.getElementById('libraryView').style.display = 'none';
+            document.getElementById('editorView').style.display = 'none';
+            document.getElementById('runAppView').style.display = 'none';
+            document.getElementById('btn-library').classList.remove('active');
+            document.getElementById('btn-editor').classList.remove('active');
+            document.getElementById('btn-runapp').style.display = 'none';
+            document.getElementById('btn-runapp').classList.remove('active');
+            document.getElementById('currentAppName').textContent = '';
+        }
+
+        function showLibrary() {
+            hideAll();
+            document.getElementById('libraryView').style.display = 'block';
+            document.getElementById('btn-library').classList.add('active');
+            document.getElementById('runAppFrame').src = '';
+            currentRunningApp = null;
+        }
+
+        function showEditor() {
+            hideAll();
+            document.getElementById('editorView').style.display = 'flex';
+            document.getElementById('btn-editor').classList.add('active');
+            document.getElementById('runAppFrame').src = '';
+            currentRunningApp = null;
+        }
+
+        function showRunApp() {
+            hideAll();
+            document.getElementById('runAppView').style.display = 'block';
+            document.getElementById('btn-runapp').style.display = 'inline-block';
+            document.getElementById('btn-runapp').classList.add('active');
+            document.getElementById('currentAppName').textContent = '🍅 ' + (currentRunningApp ? currentRunningApp.name : '');
+        }
+
+        // ============ 渲染试验田 ============
+        function renderLibrary() {
+            const orchardApps = apps.filter(a => a.category === 'orchard');
+            const basketApps = apps.filter(a => a.category === 'basket');
+
+            document.getElementById('orchardCount').textContent = orchardApps.length + ' 株';
+            document.getElementById('basketCount').textContent = basketApps.length + ' 个';
+
+            renderGrid('orchardGrid', orchardApps, 'orchard');
+            renderGrid('basketGrid', basketApps, 'basket');
+        }
+
+        function renderGrid(gridId, appList, category) {
+            const grid = document.getElementById(gridId);
+            grid.innerHTML = '';
+            appList.forEach((app, index) => {
+                const realIndex = apps.indexOf(app);
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `<span class="icon">${app.icon}</span><span class="name">${app.name}</span><span class="tag">点击收获</span><button class="delete-btn" onclick="event.stopPropagation();deleteApp(${realIndex})">✕</button>`;
+                card.onclick = () => {
+                    currentRunningApp = app;
+                    addHarvest();
+                    const win = window.open('', '_blank');
+                    win.document.write(app.code);
+                    win.document.close();
+                };
+                grid.appendChild(card);
+            });
+            // 添加按钮
+            const addCard = document.createElement('div');
+            addCard.className = 'card add-card';
+            addCard.innerHTML = '<span class="icon">➕</span><span class="name">播种新苗</span>';
+            addCard.onclick = () => {
+                document.getElementById('editorTextarea').value = '欢迎来到育苗间！你想种下怎样的植物？';
+                document.getElementById('previewFrame').src = '';
+                window._plantCategory = category;
+                showEditor();
+            };
+            grid.appendChild(addCard);
+        }
+
+        // ============ 栽培管理 ============
+        function runEditorCode() {
+            const code = document.getElementById('editorTextarea').value.trim();
+            if (!code || code === '欢迎来到育苗间！你想种下怎样的植物？') { alert('先播下种子再试收获呀～'); return; }
+            document.getElementById('previewFrame').src = 'data:text/html;charset=utf-8,' + encodeURIComponent(code);
+        }
+
+        function saveEditorCode() {
+            const code = document.getElementById('editorTextarea').value.trim();
+            if (!code || code === '欢迎来到育苗间！你想种下怎样的植物？') { alert('没有种子可收入谷仓哦～'); return; }
+            const name = prompt('给这株新苗起个名字吧：', '我的新苗');
+            if (!name) return;
+            const icon = prompt('为它选一枚标签（emoji）：', '📄') || '📄';
+            const category = window._plantCategory || 'basket';
+            apps.push({ name, icon, category, code });
+            saveApps(apps);
+            renderLibrary();
+            alert('已收入谷仓！');
+            showLibrary();
+        }
+
+        function deleteApp(index) {
+            if (confirm('确定要移除「' + apps[index].name + '」吗？')) {
+                apps.splice(index, 1);
+                saveApps(apps);
+                renderLibrary();
+                showLibrary();
+            }
+        }
+
+        // ============ 分类折叠 ============
+        function toggleSection(sectionId) {
+            document.getElementById(sectionId).classList.toggle('collapsed');
+        }
+
+        // ============ 格言 ============
+        const quotes = [
+            '每一粒种子，都藏着整个春天的决心。🌱',
+            '灵魂的欲望是对未来的预言。✨',
+            '急头白脸地冲吧！🔥',
+            '你不是在被命运推着走，你是听见了召唤。🌳',
+            '华盖是你的专注，伤官是你的才华。🎨',
+            '庚申建禄，劈开属于你的路。⚔️',
+            '累了就蹲在田边，看看已经长出来的苗。💚',
+            '你不是在等待，你是在生长。🌿',
+            '以光为华，以日为曦。☀️',
+            '南望桂水，哭我故人。🌊',
+            '乱我心者，今日之时多烦忧。🍂',
+            '弃我去者，昨日之日不可留。🌅',
+            '悟已往之不谏，知来者之可追。🕊️',
+            '我与我相伴久，宁做我。💎',
+            '水无定，花有尽，会相逢。🌸',
+            '欲望是未来的语言。🔮',
+            '希望你无往不胜，永沐光明。✨',
+            '若故人来，当美酒相迎，不醉不归。🍶',
+            '欢迎来到育苗间！你想种下怎样的植物？🌱'
+        ];
+
+        function changeQuote() {
+            const el = document.getElementById('footerQuote');
+            const newQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            el.textContent = newQuote;
+            el.style.opacity = '0';
+            setTimeout(() => { el.style.opacity = '0.6'; }, 100);
+        }
+
+        function initQuote() {
+            const el = document.getElementById('footerQuote');
+            const todayQuote = quotes[new Date().getDate() % quotes.length];
+            el.textContent = todayQuote;
+        }
+
+        // ============ 主题切换 ============
+        function applyTheme(theme) {
+            const root = document.documentElement.style;
+            const petalContainer = document.getElementById('petalContainer');
+            petalContainer.innerHTML = '';
+            clearInterval(window._petalInterval);
+
+            // 清除旧飘落
+            if (window._petalInterval) clearInterval(window._petalInterval);
+
+            const themes = {
+                spring: {
+                    bg: '#fff5f7', panel: '#ffffff', border: '#f0c0c8', text: '#4a2d3a',
+                    accent: '#d4888f', green: '#c47a80', petal: '#ffb7c5',
+                    emoji: '🌸', anim: 'fall'
+                },
+                summer: {
+                    bg: '#f5faf5', panel: '#ffffff', border: '#c8e6c8', text: '#2d3a2d',
+                    accent: '#4a8f4a', green: '#3d7a3d', petal: '#88cc88',
+                    emoji: '🍃', anim: 'fall'
+                },
+                autumn: {
+                    bg: '#fefaf0', panel: '#ffffff', border: '#e8d5b0', text: '#3a2d1a',
+                    accent: '#c08840', green: '#b07830', petal: '#f0c060',
+                    emoji: '✨', anim: 'fall'
+                },
+                winter: {
+                    bg: '#1a1a2e', panel: '#16213e', border: '#2a3a5a', text: '#c0c8e0',
+                    accent: '#8899cc', green: '#7788bb', petal: '#ffffff',
+                    emoji: '❄️', anim: 'fallSnow'
+                }
+            };
+
+            const t = themes[theme];
+            root.setProperty('--bg', t.bg);
+            root.setProperty('--panel', t.panel);
+            root.setProperty('--border', t.border);
+            root.setProperty('--text', t.text);
+            root.setProperty('--accent', t.accent);
+            root.setProperty('--green', t.green);
+            root.setProperty('--petal', t.petal);
+
+            startPetals(t.emoji, t.anim);
+            currentTheme = theme;
+            localStorage.setItem('labTheme', theme);
+
+            // 更新面板选中状态
+            document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('active-theme'));
+            document.getElementById('opt-' + theme).classList.add('active-theme');
+
+            // 收起面板
+            document.getElementById('themePanel').classList.remove('show');
+        }
+
+        function toggleThemePanel() {
+            document.getElementById('themePanel').classList.toggle('show');
+        }
+
+        // 点击面板外部关闭
+        document.addEventListener('click', function(e) {
+            const panel = document.getElementById('themePanel');
+            const btn = document.querySelector('.theme-toggle-btn');
+            if (!panel.contains(e.target) && e.target !== btn) {
+                panel.classList.remove('show');
+            }
+        });
+
+        // ============ 飘落物 ============
+        function startPetals(emoji, animName) {
+            if (window._petalInterval) clearInterval(window._petalInterval);
+            const container = document.getElementById('petalContainer');
+
+            function createPetal() {
+                const petal = document.createElement('div');
+                petal.className = 'petal';
+                petal.textContent = emoji;
+                petal.style.left = Math.random() * 100 + '%';
+                petal.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                petal.style.fontSize = (Math.random() * 16 + 14) + 'px';
+                if (animName === 'fallSnow') {
+                    petal.style.animationName = 'fallSnow';
+                }
+                container.appendChild(petal);
+                setTimeout(() => petal.remove(), 10000);
+            }
+
+            window._petalInterval = setInterval(createPetal, 800);
+            for (let i = 0; i < 8; i++) setTimeout(createPetal, i * 200);
+        }
+
+        // ============ 时间显示 ============
+        function updateTime() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            let period = '上午';
+            let h = hours;
+            if (hours >= 12) { period = '下午'; h = hours === 12 ? 12 : hours - 12; }
+            if (hours === 0) h = 12;
+            document.getElementById('timeDisplay').textContent = '🕐 ' + period + ' ' + h + ':' + minutes;
+        }
+
+        // ============ 初始化 ============
+        function init() {
+            applyTheme(currentTheme);
+            renderLibrary();
+            initQuote();
+            updateTime();
+            setInterval(updateTime, 30000); // 每30秒更新一次时间
+        }
+
+        document.getElementById('footerQuote').addEventListener('click', changeQuote);
+        init();
+        function getSolarTerm(date) {
+            const y = date.getFullYear();
+            const terms = [
+                [y,1,5,'小寒'],[y,1,20,'大寒'],[y,2,3,'立春'],[y,2,18,'雨水'],
+                [y,3,5,'惊蛰'],[y,3,20,'春分'],[y,4,4,'清明'],[y,4,19,'谷雨'],
+                [y,5,5,'立夏'],[y,5,20,'小满'],[y,6,5,'芒种'],[y,6,21,'夏至'],
+                [y,7,6,'小暑'],[y,7,22,'大暑'],[y,8,7,'立秋'],[y,8,22,'处暑'],
+                [y,9,7,'白露'],[y,9,22,'秋分'],[y,10,7,'寒露'],[y,10,23,'霜降'],
+                [y,11,7,'立冬'],[y,11,22,'小雪'],[y,12,6,'大雪'],[y,12,21,'冬至']
+            ];
+            const now = date.getTime();
+            let term = '冬至';
+            for (const [yy, mm, dd, name] of terms) {
+                if (now >= new Date(yy, mm-1, dd).getTime()) term = name;
+                else break;
+            }
+            return term;
+        }
+
+        function updateTime() {
+            const now = new Date();
+            const h = now.getHours(), m = String(now.getMinutes()).padStart(2,'0');
+            const y = now.getFullYear(), mo = now.getMonth()+1, d = now.getDate();
+            const wds = ['日','一','二','三','四','五','六'];
+            const wd = wds[now.getDay()];
+            const term = getSolarTerm(now);
+            let p = '上午', dh = h;
+            if (h >= 12) { p = '下午'; dh = h === 12 ? 12 : h - 12; }
+            if (h === 0) dh = 12;
+            document.getElementById('timeBarText').textContent =
+                '🕐 ' + p + ' ' + dh + ':' + m +
+                ' | 📅 ' + y + '年' + mo + '月' + d + '日 星期' + wd +
+                ' | 🌿 ' + term;
+        }
+        updateTime();
+        setInterval(updateTime, 30000);
+        // ============ 天气 ============
+        function fetchWeather() {
+            if (!navigator.geolocation) {
+                document.getElementById('timeBarText').textContent += ' | 🌤️ 定位不可用';
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&timezone=auto')
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            const w = data.current_weather;
+                            const code = w.weathercode;
+                            let emoji = '☀️';
+                            if (code >= 1 && code <= 3) emoji = '🌤️';
+                            else if (code >= 45 && code <= 48) emoji = '🌫️';
+                            else if (code >= 51 && code <= 67) emoji = '🌧️';
+                            else if (code >= 71 && code <= 77) emoji = '❄️';
+                            else if (code >= 80 && code <= 82) emoji = '🌦️';
+                            else if (code >= 95) emoji = '⛈️';
+                            const t = document.getElementById('timeBarText');
+                            t.textContent = t.textContent + ' | ' + emoji + ' ' + w.temperature + '°C';
+                        })
+                        .catch(function() {
+                                       document.getElementById('timeBarText').textContent = ' | 🌤️ 天气加载失败';
+                        });
+                },
+                function() {
+                                document.getElementById('timeBarText').textContent = ' | 📍 定位未开启';
+                }
+            );
+        }
+        fetchWeather();
+        // ============ 小精灵 ============
+        const fairyWords = [
+            '欢迎小园丁！今天过得好吗？','你来啦！田里的苗都在等你。','下午好！有没有记得喝水？',
+            '吃饭了吗？胃在等你投喂。','今天开心吗？不开心的话，和我说说。','你看起来有点累，要不要休息一下？',
+            '不要熬夜！文献明天也能看。','今天学习了吗？没学也没关系，反正我在学。','你的薄荷说它想你了。',
+            '记得给铜钱草换水！它在用叶子比划 SOS。','你已经做得很好了，今天也是。','每一步都算数，哪怕今天只走了一小步。',
+            '你是你自己的光，别忘了。','累了就蹲下来，看看田边的小花。','想发疯就发疯，想毁灭世界就毁灭世界（在脑子里）。',
+            '今天适合停下来看一朵云。','你种的每一粒种子，都会发芽。','华盖星今天也很安静，但它一直在守护你。'
+        ];
+        function fairySpeak() {
+            const bubble = document.getElementById('fairyBubble');
+            bubble.textContent = fairyWords[Math.floor(Math.random() * fairyWords.length)];
+            bubble.style.display = 'block';
+            clearTimeout(window._fairyTimer);
+            window._fairyTimer = setTimeout(function() { bubble.style.display = 'none'; }, 4000);
+        }
+        // ============ 六爻占卜 ============
+        let yaoCount = 0, yaoLines = [], divinationDone = false;
+        const guaNames = ['乾为天','坤为地','水雷屯','山水蒙','水天需','天水讼','地水师','水地比','风天小畜','天泽履','地天泰','天地否','天火同人','火天大有','地山谦','雷地豫','泽雷随','山风蛊','地泽临','风地观','火雷噬嗑','山火贲','山地剥','地雷复','天雷无妄','山天大畜','山雷颐','泽风大过','坎为水','离为火','泽山咸','雷风恒','天山遁','雷天大壮','火地晋','地火明夷','风火家人','火泽睽','水山蹇','雷水解','山泽损','风雷益','泽天夬','天风姤','泽地萃','地风升','泽水困','水风井','泽火革','火风鼎','震为雷','艮为山','风山渐','雷泽归妹','雷火丰','火山旅','巽为风','兑为泽','风水涣','水泽节','风泽中孚','雷山小过','水火既济','火水未济'];
+        const guaHumors = {
+            '乾为天':'今日气场两米八，适合做决定，不适合和人抬杠。',
+            '坤为地':'宜低调耕耘，宜吃顿好的犒劳自己，忌在意别人眼光。',
+            '水雷屯':'万事开头难，今天卡住了别急，小苗破土也需要时间。',
+            '山水蒙':'蒙昧初开，今天适合问问题，不适合假装自己懂了。',
+            '水天需':'需要等待的一天。好事多磨，先喝杯水，不急。',
+            '天水讼':'今日易有口舌，说话前先停三秒，赢了辩论可能输了心情。',
+            '地水师':'适合团队作战的一天，找个人一起学习吧。',
+            '水地比':'亲和力max，今天适合拉近关系。',
+            '风天小畜':'小有积蓄，今天适合整理，不适合大手大脚。',
+            '天泽履':'如履薄冰，今天谨慎一点没坏处，但也别太紧张。',
+            '地天泰':'通泰！顺遂的一天，适合推进重要的事。',
+            '天地否':'否极泰来。今天可能有点堵，但转机正在路上。',
+            '天火同人':'适合和朋友一起行动，独行不如同行。',
+            '火天大有':'丰收之象！今天的努力会有回报。',
+            '地山谦':'谦虚使人进步，今天保持低调，收获反而更多。',
+            '雷地豫':'愉悦的一天，适合做让自己开心的事。',
+            '泽雷随':'随遇而安。今天不用太用力，顺着流走就好。',
+            '山风蛊':'蛊惑人心？今天警惕冲动消费和甜言蜜语。',
+            '地泽临':'临高望远。适合制定计划，俯瞰全局。',
+            '风地观':'观察比行动更重要的一天，先看清楚再说。',
+            '火雷噬嗑':'咬合之力。今天适合啃硬骨头，攻坚克难。',
+            '山火贲':'装饰之美。宜打扮自己，宜欣赏艺术，忌浮于表面。',
+            '山地剥':'剥落之象。今天适合断舍离，扔掉不必要的东西。',
+            '地雷复':'一阳来复！新的开始正在萌芽，宜重启计划。',
+            '天雷无妄':'无妄之灾？今天小心意外，走路看路。',
+            '山天大畜':'积蓄力量。今天适合充电，不适合冲刺。',
+            '山雷颐':'颐养天年。宜养生，宜早睡，忌暴饮暴食。',
+            '泽风大过':'过犹不及。今天凡事留三分，不要太极端。',
+            '坎为水':'坎险重重，但水能穿石。今天是考验耐心的一天。',
+            '离为火':'光明正大。今天适合展示自己，像火焰一样自信。',
+            '泽山咸':'感应之力。今天直觉很强，适合倾听内心。',
+            '雷风恒':'恒久之道。坚持就是胜利，今天尤其如此。',
+            '天山遁':'退避之象。今天不适合硬碰硬，以退为进。',
+            '雷天大壮':'声势浩大！今天能量满满，适合冲一把。',
+            '火地晋':'进步之象。今天会往前迈一步，哪怕很小。',
+            '地火明夷':'明夷晦暗。今天低调行事，锋芒暂藏。',
+            '风火家人':'宜和家人联系，宜待在自己舒服的小窝里。',
+            '火泽睽':'睽违不合。今天可能和人意见不同，求同存异就好。',
+            '水山蹇':'艰难的一天，但山重水复，每一步都算数。',
+            '雷水解':'解困！问题开始松动，今天宜解决问题。',
+            '山泽损':'损益之间。今天可能有所失，但也必有所得。',
+            '风雷益':'增益之象。今天适合学习新东西，吸收力强。',
+            '泽天夬':'决断之时。今天必须做个决定，别拖了。',
+            '天风姤':'不期而遇。今天可能有惊喜邂逅，保持开放。',
+            '泽地萃':'聚集之力。今天适合社交、聚会、合作。',
+            '地风升':'步步高升。今天努力会被看见，宜向上。',
+            '泽水困':'困顿之时。今天可能有点累，允许自己停下来。',
+            '水风井':'井养不穷。今天适合深耕，不宜冒进。',
+            '泽火革':'变革之时。今天适合改变一个小习惯。',
+            '火风鼎':'鼎新之象。今天适合创新，打破常规。',
+            '震为雷':'震惊百里。今天可能有大消息，保持镇定。',
+            '艮为山':'不动如山。今天稳住，不轻易动摇。',
+            '风山渐':'循序渐进。慢就是快，今天不追求速度。',
+            '雷泽归妹':'归属感。今天适合回归，回到让自己安心的地方。',
+            '雷火丰':'丰盛之象！今天收获满满，宜庆祝。',
+            '火山旅':'旅人之象。今天可能奔波，宜轻装上阵。',
+            '巽为风':'风行草偃。今天适合灵活应变，随风而动。',
+            '兑为泽':'愉悦的一天。宜聊天，宜表达，宜开心。',
+            '风水涣':'涣散之象。今天容易分心，宜定一个明确目标。',
+            '水泽节':'节制之力。今天宜克制，忌放纵。',
+            '风泽中孚':'诚信之象。今天保持真诚，信任会到来。',
+            '雷山小过':'小有过越。今天注意细节，小错误可能被发现。',
+            '水火既济':'既济已成。事情快完成了，坚持最后一步。',
+            '火水未济':'未济未成。今天可能还没看到结果，但已在路上。'
+        };
+
+        function checkDivinationReset() {
+            var today = new Date().toDateString();
+            var saved = localStorage.getItem('divinationDate');
+            if (saved !== today) {
+                localStorage.setItem('divinationDate', today);
+                localStorage.removeItem('divinationResult');
+                divinationDone = false;
+                yaoCount = 0;
+                yaoLines = [];
+                document.getElementById('taijiIcon').classList.remove('used');
+                document.getElementById('resultArea').style.display = 'none';
+                document.getElementById('btnShake').style.display = 'inline-block';
+                document.getElementById('yaoContainer').innerHTML = '';
+            } else if (localStorage.getItem('divinationResult')) {
+                divinationDone = true;
+                document.getElementById('taijiIcon').classList.add('used');
+            }
+        }
+
+                       function startDivination() {
+            checkDivinationReset();
+            document.getElementById('divinationPanel').classList.add('show');
+            document.getElementById('overlay').classList.add('show');
+            if (divinationDone) {
+                // 今天已摇过，直接展示结果
+                document.getElementById('btnShake').style.display = 'none';
+                document.getElementById('resultArea').style.display = 'block';
+                // 重新渲染爻线
+                var container = document.getElementById('yaoContainer');
+                container.innerHTML = '';
+                for (var i = 0; i < yaoLines.length; i++) {
+                    var el = document.createElement('div');
+                    el.className = 'yao-line';
+                    el.textContent = yaoLines[i] === 1 ? '▅▅▅▅▅▅▅' : '▅▅   ▅▅';
+                    container.appendChild(el);
+                }
+                // 恢复卦象结果
+                var saved = localStorage.getItem('divinationResult');
+                if (saved) {
+                    var data = JSON.parse(saved);
+                    var html = '<div class="gua-name">䷀ ' + data.guaName + '</div>';
+                    html += '<p style="text-align:center;font-style:italic;margin-bottom:10px;">"' + data.humor + '"</p>';
+                    if (data.yis && data.jis) {
+                        html += '<div class="yi"><b>✅ 今日宜：</b><br>' + data.yis.map(function(y){ return '· ' + y.text; }).join('<br>') + '</div>';
+                        html += '<div class="ji"><b>❌ 今日忌：</b><br>' + data.jis.map(function(j){ return '· ' + j.gentle; }).join('<br>') + '</div>';
+                    }
+                    document.getElementById('resultArea').innerHTML = html;
+                }
+            } else {
+                // 还没摇过，展示摇卦界面
+                document.getElementById('resultArea').style.display = 'none';
+                document.getElementById('btnShake').style.display = 'inline-block';
+                document.getElementById('yaoContainer').innerHTML = '';
+            }
+        }
+
+        function closeDivination() {
+            document.getElementById('divinationPanel').classList.remove('show');
+            document.getElementById('overlay').classList.remove('show');
+        }
+
+        function shakeYao() {
+            if (divinationDone) return;
+            var isYang = Math.random() > 0.5;
+            var line = isYang ? '▅▅▅▅▅▅▅' : '▅▅   ▅▅';
+            yaoLines.push(isYang ? 1 : 0);
+            yaoCount++;
+            var el = document.createElement('div');
+            el.className = 'yao-line born';
+            el.textContent = line;
+            document.getElementById('yaoContainer').appendChild(el);
+            if (yaoCount >= 6) {
+                document.getElementById('btnShake').style.display = 'none';
+                divinationDone = true;
+                document.getElementById('taijiIcon').classList.add('used');
+                var bin = yaoLines.join('');
+                var idx = parseInt(bin, 2) % 64;
+                var guaName = guaNames[idx];
+                var humor = guaHumors[guaName] || '今日运势平平，但平平淡淡才是真。';
+                               // 随机选3宜3忌
+                var yiPool = [
+                    { text:'宜认真听课', weight:8 },{ text:'宜复习单词', weight:7 },{ text:'宜复看文献', weight:7 },
+                    { text:'宜吃水果', weight:7 },{ text:'宜早睡', weight:7 },{ text:'宜记录一个新句子', weight:7 },
+                    { text:'宜停下来看一株花 / 一朵云', weight:7 },{ text:'宜释放休息', weight:7 },
+                    { text:'宜整理桌面', weight:7 },{ text:'宜列今日计划', weight:7 },{ text:'宜深呼吸三次', weight:7 },
+                    { text:'宜夸自己一句', weight:7 },{ text:'宜好好生活', weight:8 },{ text:'宜好好对自己', weight:8 },
+                    { text:'宜跑步 / 校园跑', weight:6 },{ text:'宜和朋友聊天', weight:5 },
+                    { text:'宜和朋友分享今日趣事 / 穿搭 / 任务', weight:5 },{ text:'宜喝一杯果汁', weight:5 },
+                    { text:'宜早起', weight:5 },{ text:'宜换一首没听过的歌', weight:5 },{ text:'宜给植物浇水', weight:5 },
+                    { text:'宜做五分钟拉伸', weight:5 },{ text:'宜给铜钱草换水', weight:5 },{ text:'宜给薄荷施肥', weight:4 },
+                    { text:'宜给朋友讲一个冷笑话', weight:4 },{ text:'宜删掉一张没用的截图', weight:4 },
+                    { text:'宜发一条仅自己可见的朋友圈', weight:4 },{ text:'宜把袜子翻过来穿', weight:3 },
+                    { text:'宜喝奶茶', weight:2 },{ text:'宜买一束花放在书桌旁', weight:2 },
+                    { text:'宜什么也不做发呆十分钟', weight:2 },{ text:'宜吃一顿完全不在计划里的饭', weight:2 },
+                    { text:'宜翻看三年前的朋友圈', weight:1 },{ text:'宜给自己买个小礼物', weight:1 }
+                ];
+                var jiPool = [
+                    { text:'忌熬夜', gentle:'🌙 今晚试着早一点关灯吧' },
+                    { text:'忌吵架', gentle:'🤫 说出口前，先停三秒' },
+                    { text:'忌不吃饭', gentle:'🍚 记得按时吃饭，胃会谢你' },
+                    { text:'忌不学习', gentle:'📖 哪怕只看一页，也是生长' },
+                    { text:'忌自我怀疑', gentle:'💚 你已经做得很好了，今天也是' },
+                    { text:'忌一直坐着', gentle:'🚶 起来走走，哪怕就三分钟' },
+                    { text:'忌不吃水果', gentle:'🍎 去啃个苹果，脆的那种' },
+                    { text:'忌憋着情绪不说', gentle:'🗣️ 找个信得过的人，或者写下来' },
+                    { text:'忌同时做三件事', gentle:'🧘 一次只做一件，做完再换' },
+                    { text:'忌刷手机超过半小时', gentle:'📱 闹钟响了就放下，真的' },
+                    { text:'忌说"我不行"', gentle:'🚫 今天禁止自我否定句式' },
+                    { text:'忌不吃蔬菜', gentle:'🥬 你的身体需要光合作用' },
+                    { text:'忌和网上陌生人吵架', gentle:'🌊 不值得为陌生人浪费你的伤官才华' },
+                    { text:'忌觉得休息是浪费时间', gentle:'💤 休息是你应得的，不是偷懒' },
+                    { text:'忌沉迷游戏', gentle:'🎮 玩一局就回来，田里的苗在等你' },
+                    { text:'忌赖床', gentle:'🌅 被窝很暖，但清晨的光更值得' }
+                ];
+                function weightedPick(items) {
+                    var total = items.reduce(function(s, i) { return s + i.weight; }, 0);
+                    var r = Math.random() * total;
+                    for (var k = 0; k < items.length; k++) { r -= items[k].weight; if (r <= 0) return items[k]; }
+                    return items[items.length - 1];
+                }
+                function pickN(items, n) {
+                    var pool = items.slice();
+                    var result = [];
+                    for (var k = 0; k < n && pool.length > 0; k++) {
+                        var picked = weightedPick(pool);
+                        result.push(picked);
+                        pool.splice(pool.indexOf(picked), 1);
+                    }
+                    return result;
+                }
+                var yis = pickN(yiPool, 3);
+                var jis = pickN(jiPool, 3);
+                var html = '<div class="gua-name">䷀ ' + guaName + '</div>';
+                html += '<p style="text-align:center;font-style:italic;margin-bottom:10px;">"' + humor + '"</p>';
+                html += '<div class="yi"><b>✅ 今日宜：</b><br>' + yis.map(function(y){ return '· ' + y.text; }).join('<br>') + '</div>';
+                html += '<div class="ji"><b>❌ 今日忌：</b><br>' + jis.map(function(j){ return '· ' + j.gentle; }).join('<br>') + '</div>';
+                document.getElementById('resultArea').innerHTML = html;
+                document.getElementById('resultArea').style.display = 'block';
+                                localStorage.setItem('divinationResult', JSON.stringify({guaName: guaName, humor: humor, lines: yaoLines, yis: yis, jis: jis}));
+            }
+        }
+
+        function restoreDivination() {
+            var saved = localStorage.getItem('divinationResult');
+            if (!saved) return;
+            var data = JSON.parse(saved);
+            document.getElementById('taijiIcon').classList.add('used');
+            divinationDone = true;
+            yaoCount = 6;
+            yaoLines = data.lines;
+            var container = document.getElementById('yaoContainer');
+            container.innerHTML = '';
+            data.lines.forEach(function(l) {
+                var el = document.createElement('div');
+                el.className = 'yao-line';
+                el.textContent = l === 1 ? '▅▅▅▅▅▅▅' : '▅▅   ▅▅';
+                container.appendChild(el);
+            });
+                        var html = '<div class="gua-name">䷀ ' + data.guaName + '</div>';
+            html += '<p style="text-align:center;font-style:italic;margin-bottom:10px;">"' + data.humor + '"</p>';
+            if (data.yis && data.jis) {
+                html += '<div class="yi"><b>✅ 今日宜：</b><br>' + data.yis.map(function(y){ return '· ' + y.text; }).join('<br>') + '</div>';
+                html += '<div class="ji"><b>❌ 今日忌：</b><br>' + data.jis.map(function(j){ return '· ' + j.gentle; }).join('<br>') + '</div>';
+            }
+            document.getElementById('resultArea').innerHTML = html;
+            document.getElementById('resultArea').style.display = 'block';
+            document.getElementById('btnShake').style.display = 'none';
+        }
+
+        // 初始化时恢复今日卦象
+        checkDivinationReset();
+        if (localStorage.getItem('divinationResult')) {
+            restoreDivination();
+        }
+    </script>
+    <!-- 遮罩 -->
+    <div class="overlay" id="overlay" onclick="closeDivination()"></div>
+    <!-- 占卜面板 -->
+    <div class="divination-panel" id="divinationPanel">
+        <button class="close-btn" onclick="closeDivination()">✕</button>
+        <h3 style="color:var(--green);margin-bottom:10px;">☯️ 每日一卦</h3>
+        <div id="yaoContainer"></div>
+        <button class="btn-shake" id="btnShake" onclick="shakeYao()">🎲 摇一爻</button>
+        <div class="result-area" id="resultArea" style="display:none;"></div>
+    </div>
+   <!-- 网页小精灵 -->
+    <div class="fairy" id="fairy" onclick="fairySpeak()">
+        <span class="icon">🌱</span>
+        <span class="bubble" id="fairyBubble" style="display:none;"></span>
+    </div>
+</body>
+</html>
