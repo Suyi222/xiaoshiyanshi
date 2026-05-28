@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📗 园艺知识手册</title>
+    <style>
+        :root {
+            --bg: #f5faf5;
+            --panel: #ffffff;
+            --border: #c8e6c8;
+            --text: #2d3a2d;
+            --accent: #4a8f4a;
+            --green: #3d7a3d;
+            --shadow: 0 4px 15px rgba(0,0,0,0.05);
+            --light-green: #e8f5e8;
+            --warm: #f0e8d0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* 顶部标题栏 */
+        .header {
+            text-align: center;
+            padding: 20px;
+            width: 100%;
+        }
+        .header h1 { font-size: 28px; color: var(--green); }
+        .header .subtitle { font-size: 14px; opacity: 0.5; margin-top: 4px; }
+
+        /* 工具栏 */
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 10px 20px;
+            z-index: 10;
+        }
+        .tool-btn {
+            background: var(--panel);
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .tool-btn:hover { border-color: var(--accent); background: var(--light-green); }
+        .tool-btn.primary { background: var(--green); color: white; border-color: var(--green); }
+        .tool-btn.primary:hover { opacity: 0.85; }
+        .tool-btn.danger { border-color: #e8c8c8; color: #c0392b; }
+        .tool-btn.danger:hover { background: #fff5f5; }
+        .card-count { font-size: 13px; opacity: 0.5; align-self: center; }
+
+        /* 书册主体 */
+        .book-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            width: 100%;
+            perspective: 1800px;
+        }
+        .book {
+            display: flex;
+            background: linear-gradient(to right, #faf8f0 0%, #f5f0e5 50%, #faf8f0 100%);
+            border-radius: 12px 20px 20px 12px;
+            box-shadow:
+                0 20px 60px rgba(0,0,0,0.12),
+                0 4px 10px rgba(0,0,0,0.06),
+                inset 0 0 0 2px #e8dcc8;
+            position: relative;
+            max-width: 900px;
+            width: 100%;
+            min-height: 500px;
+        }
+        /* 书脊 */
+        .book::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 8px;
+            background: linear-gradient(to right, #c8b898, #e0d0b0, #c8b898);
+            border-radius: 6px 0 0 6px;
+            z-index: 5;
+            box-shadow: inset -2px 0 3px rgba(0,0,0,0.05);
+        }
+        /* 书脊装饰线 */
+        .book::after {
+            content: '';
+            position: absolute;
+            left: 20px; top: 10%; bottom: 10%;
+            width: 1px;
+            background: rgba(0,0,0,0.06);
+            z-index: 5;
+        }
+
+        /* 左页 */
+        .page-left, .page-right {
+            flex: 1;
+            padding: 35px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-height: 460px;
+            cursor: pointer;
+            transition: background 0.3s;
+            perspective: 1200px;
+            overflow: hidden;
+        }
+        .page-left {
+            border-radius: 0 0 0 8px;
+            padding-left: 45px;
+        }
+        .page-right { border-radius: 0 8px 8px 0; }
+        .page-left:hover, .page-right:hover { background: rgba(0,0,0,0.015); }
+
+        /* ===== 3D 卡片翻转容器 ===== */
+        .card-flip-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+        .card-flip-inner.flipped {
+            transform: rotateY(180deg);
+        }
+
+        /* 正面 */
+        .card-front {
+            position: absolute;
+            width: 100%;
+            backface-visibility: hidden;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
+        }
+        /* 背面 */
+        .card-back {
+            position: absolute;
+            width: 100%;
+            backface-visibility: hidden;
+            transform: rotateY(180deg);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
+        }
+
+        /* 中缝 */
+        .spine-line {
+            width: 0;
+            border-left: 1px dashed rgba(0,0,0,0.08);
+        }
+
+        /* 页码 */
+        .page-num {
+            position: absolute;
+            bottom: 20px;
+            font-size: 12px;
+            opacity: 0.35;
+            font-style: italic;
+        }
+        .page-left .page-num { left: 25px; }
+        .page-right .page-num { right: 20px; }
+        .card-front .icon-display {
+            font-size: 60px;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+        .card-front .card-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--green);
+            margin-bottom: 8px;
+        }
+        .card-front .card-hint {
+            font-size: 12px;
+            opacity: 0.4;
+            margin-top: 10px;
+        }
+
+        /* 卡片背面 */
+        .card-back .card-title-back {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed var(--border);
+        }
+        .card-back .card-content {
+            font-size: 15px;
+            line-height: 1.9;
+            text-align: left;
+            color: var(--text);
+            max-height: 280px;
+            overflow-y: auto;
+            padding: 0 5px;
+        }
+        .card-back .card-content::-webkit-scrollbar { width: 4px; }
+        .card-back .card-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        /* 翻转提示 */
+        .flip-hint {
+            position: absolute;
+            top: 15px;
+            font-size: 11px;
+            opacity: 0.35;
+            letter-spacing: 2px;
+            z-index: 3;
+        }
+        .page-left .flip-hint { left: 25px; }
+        .page-right .flip-hint { right: 20px; }
+
+        /* ===== 翻页动画 ===== */
+        .book-wrapper {
+            position: relative;
+            max-width: 900px;
+            width: 100%;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .book-wrapper.turn-next {
+            animation: pageTurnNext 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .book-wrapper.turn-prev {
+            animation: pageTurnPrev 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes pageTurnNext {
+            0% { transform: translateX(0) rotateY(0deg); opacity: 1; }
+            30% { transform: translateX(-15px) rotateY(-8deg); opacity: 0.9; }
+            60% { transform: translateX(-30px) rotateY(-3deg); opacity: 0.7; }
+            100% { transform: translateX(0) rotateY(0deg); opacity: 1; }
+        }
+        @keyframes pageTurnPrev {
+            0% { transform: translateX(0) rotateY(0deg); opacity: 1; }
+            30% { transform: translateX(15px) rotateY(8deg); opacity: 0.9; }
+            60% { transform: translateX(30px) rotateY(3deg); opacity: 0.7; }
+            100% { transform: translateX(0) rotateY(0deg); opacity: 1; }
+        }
+
+        /* 书页内容切换过渡 */
+        .page-content {
+            transition: opacity 0.3s ease;
+        }
+        .page-content.fading { opacity: 0; }
+
+        /* 翻页按钮 */
+        .nav-arrows {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 20;
+        }
+        .nav-arrow {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: var(--panel);
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: var(--shadow);
+            color: var(--text);
+        }
+        .nav-arrow:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.05); }
+        .nav-arrow:active { transform: scale(0.95); }
+
+        /* 弹窗 - 添加/编辑 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.35);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--panel);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            z-index: 201;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .modal h3 {
+            text-align: center;
+            color: var(--green);
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        .modal label {
+            font-size: 13px;
+            opacity: 0.6;
+            display: block;
+            margin-bottom: 4px;
+            margin-top: 14px;
+        }
+        .modal input, .modal textarea, .modal select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+            background: var(--bg);
+            color: var(--text);
+        }
+        .modal input:focus, .modal textarea:focus { border-color: var(--accent); }
+        .modal textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+        .modal .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            opacity: 0.5;
+            padding: 60px 20px;
+        }
+        .empty-state .icon { font-size: 60px; margin-bottom: 15px; }
+        .empty-state p { font-size: 16px; }
+
+        /* 删除确认 */
+        .delete-icon {
+            position: absolute;
+            top: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.2s;
+            background: none;
+            border: none;
+            color: #c0392b;
+            padding: 5px 10px;
+            border-radius: 10px;
+            z-index: 6;
+        }
+        .page-left .delete-icon { right: 15px; }
+        .page-right .delete-icon { right: 15px; }
+        .page-left:hover .delete-icon, .page-right:hover .delete-icon { opacity: 0.5; }
+        .delete-icon:hover { opacity: 1 !important; background: #fff0f0; }
+
+        @media (max-width: 700px) {
+            .book { flex-direction: column; max-width: 400px; border-radius: 12px 20px 20px 12px; }
+            .book::before { width: 6px; border-radius: 4px 0 0 4px; }
+            .book::after { display: none; }
+            .page-left, .page-right { padding: 25px 20px; min-height: 200px; }
+            .page-left { padding-left: 35px; }
+            .spine-line { display: none; }
+            .card-front .icon-display { font-size: 40px; }
+            .card-front .card-title { font-size: 18px; }
+            .card-back .card-content { font-size: 14px; max-height: 180px; }
+            .nav-arrows { bottom: -20px; }
+            .nav-arrow { width: 40px; height: 40px; font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📗 园艺知识手册</h1>
+        <p class="subtitle">翻开每一页，都是生长的秘密 🌱</p>
+    </div>
+
+    <div class="toolbar">
+        <button class="tool-btn primary" onclick="showAddModal()">➕ 添加新卡</button>
+        <button class="tool-btn" onclick="flipLeft()">🔄 左页翻转</button>
+        <button class="tool-btn" onclick="flipRight()">🔄 右页翻转</button>
+        <span class="card-count" id="cardCount">共 0 张卡片</span>
+    </div>
+
+    <div class="book-container">
+        <div style="position:relative;max-width:900px;width:100%;">
+            <div class="book-wrapper" id="bookWrapper">
+            <div class="book" id="book">
+                <!-- 左页 -->
+                <div class="page-left" id="pageLeft" onclick="flipLeft()">
+                    <span class="flip-hint">点击翻转</span>
+                    <div class="card-flip-inner" id="leftFlipInner">
+                        <div class="card-front" id="leftFront">
+                            <div class="icon-display">📖</div>
+                            <div class="card-title">欢迎翻阅</div>
+                            <div class="card-hint">点击添加你的第一张知识卡</div>
+                        </div>
+                        <div class="card-back" id="leftBack">
+                            <div class="card-title-back" id="leftBackTitle"></div>
+                            <div class="card-content" id="leftBackContent"></div>
+                        </div>
+                    </div>
+                    <button class="delete-icon" title="删除此卡" onclick="event.stopPropagation();deleteCard('left')">🗑️</button>
+                    <span class="page-num" id="leftPageNum"></span>
+                </div>
+
+                <!-- 中缝 -->
+                <div class="spine-line"></div>
+
+                <!-- 右页 -->
+                <div class="page-right" id="pageRight" onclick="flipRight()">
+                    <span class="flip-hint">点击翻转</span>
+                    <div class="card-flip-inner" id="rightFlipInner">
+                        <div class="card-front" id="rightFront">
+                            <div class="icon-display">📖</div>
+                            <div class="card-title">欢迎翻阅</div>
+                            <div class="card-hint">点击添加你的第一张知识卡</div>
+                        </div>
+                        <div class="card-back" id="rightBack">
+                            <div class="card-title-back" id="rightBackTitle"></div>
+                            <div class="card-content" id="rightBackContent"></div>
+                        </div>
+                    </div>
+                    <button class="delete-icon" title="删除此卡" onclick="event.stopPropagation();deleteCard('right')">🗑️</button>
+                    <span class="page-num" id="rightPageNum"></span>
+                </div>
+            </div>
+
+            <!-- 翻页导航 -->
+            <div class="nav-arrows">
+                <button class="nav-arrow" onclick="prevPage()" title="上一页">◀</button>
+                <button class="nav-arrow" onclick="nextPage()" title="下一页">▶</button>
+            </div>
+            </div><!-- end book-wrapper -->
+        </div>
+    </div>
+
+    <!-- 添加/编辑弹窗 -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <h3 id="modalTitle">🌱 种下一张新卡片</h3>
+            <label>📛 卡片标题</label>
+            <input type="text" id="inputTitle" placeholder="例如：多肉植物的养护秘诀">
+            <label>🎨 图标（Emoji）</label>
+            <input type="text" id="inputIcon" placeholder="例如：🪴" maxlength="4">
+            <label>📝 详细内容</label>
+            <textarea id="inputContent" placeholder="写下你想记住的知识点..."></textarea>
+            <div class="btn-row">
+                <button class="tool-btn" onclick="closeModal()">取消</button>
+                <button class="tool-btn primary" id="btnSave" onclick="saveCard()">💾 保存卡片</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ 数据管理 ============
+        const STORAGE_KEY = 'gardenHandbook_cards_v1';
+        const STATE_KEY = 'gardenHandbook_state_v1';
+
+        let cards = [];
+        let currentPage = 0; // 当前显示哪一页（每页显示2张卡片）
+        let leftFlipped = false;
+        let rightFlipped = false;
+        let editingIndex = -1; // -1表示新建
+
+        function loadCards() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            cards = saved ? JSON.parse(saved) : [];
+            if (cards.length === 0) {
+                cards = getDefaultCards();
+                saveCards();
+            }
+        }
+        function saveCards() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+        }
+        function loadState() {
+            const saved = localStorage.getItem(STATE_KEY);
+            if (saved) {
+                const state = JSON.parse(saved);
+                currentPage = state.currentPage || 0;
+                leftFlipped = state.leftFlipped || false;
+                rightFlipped = state.rightFlipped || false;
+            }
+        }
+        function saveState() {
+            localStorage.setItem(STATE_KEY, JSON.stringify({
+                currentPage: currentPage,
+                leftFlipped: leftFlipped,
+                rightFlipped: rightFlipped
+            }));
+        }
+
+        function getDefaultCards() {
+            return [
+                { title: '多肉植物浇水法则', icon: '🪴', content: '多肉植物浇水遵循"干透浇透"原则。\n\n1. 用手指插入土壤2-3cm，完全干燥再浇\n2. 夏季休眠期减少浇水，冬季保持偏干\n3. 浇水时避开叶片，直接浇根部\n4. 使用透气性好的颗粒土\n\n记住：多肉大多死于浇水过多，而非过少。' },
+                { title: '薄荷的日常养护', icon: '🌿', content: '薄荷是最好养的香草之一！\n\n☀️ 光照：喜欢充足阳光，但夏季需适当遮阴\n💧 浇水：保持土壤湿润，表土干了就浇\n🌡️ 温度：15-25°C最佳，耐寒也耐热\n✂️ 修剪：经常摘心促分枝，越剪越旺\n\n小提示：薄荷侵略性很强，建议盆栽而非地栽。' },
+                { title: '铜钱草养护指南', icon: '🪷', content: '铜钱草（香菇草）寓意财运滚滚！\n\n💧 半水半土最佳，保持根部湿润\n☀️ 喜光但忌暴晒，散射光最好\n🌡️ 喜温暖，冬季不低于5°C\n🔄 每周转动花盆保证均匀生长\n\n黄叶原因：光照不足或水质问题\n换水频率：夏季3-5天，冬季7-10天' },
+                { title: '常见土壤配比', icon: '🪹', content: '不同植物需要不同配比的土壤：\n\n🌵 多肉配方：泥炭土:珍珠岩:蛭石=3:1:1\n🌿 观叶植物：园土:腐叶土:河沙=4:4:2\n🌸 开花植物：园土:腐叶土:河沙=4:3:3\n🌱 育苗土：泥炭土:蛭石=3:1\n\n通用原则：保证疏松透气、排水良好' },
+                { title: '室内植物摆放风水', icon: '🏡', content: '植物摆放讲究方位与气场：\n\n东/东南方：适合放绿萝、发财树（木旺）\n南方：适合开红花的植物（火旺）\n西南/东北：适合多肉、仙人掌（土旺）\n北方：适合水培植物（水旺）\n\n卧室不宜放太多植物，夜间会消耗氧气\n书房放文竹、兰花，有助于静心' },
+                { title: '扦插繁殖入门', icon: '✂️', content: '扦插是最简单的繁殖方式：\n\n🌱 茎插：选健康枝条，剪10-15cm，去下部叶片，插入基质\n🍃 叶插：多肉叶片平放土面，保持微湿\n💧 水插：放入清水中，每2天换水，生根后移栽\n\n最佳季节：春秋两季（15-25°C）\n关键：保持湿度、避免直射光、耐心等待' }
+            ];
+        }
+
+        // ============ 渲染 ============
+        function renderBook() {
+            const totalPages = Math.ceil(cards.length / 2);
+            if (currentPage >= totalPages) currentPage = Math.max(0, totalPages - 1);
+            if (currentPage < 0) currentPage = 0;
+            if (cards.length === 0) currentPage = 0;
+
+            document.getElementById('cardCount').textContent = '共 ' + cards.length + ' 张卡片';
+
+            // 左页索引
+            const leftIdx = currentPage * 2;
+            const rightIdx = leftIdx + 1;
+
+            renderPage('left', leftIdx);
+            renderPage('right', rightIdx);
+
+            // 页码
+            document.getElementById('leftPageNum').textContent = cards.length > 0 ? '第 ' + (leftIdx + 1) + ' 张' : '';
+            document.getElementById('rightPageNum').textContent = rightIdx < cards.length ? '第 ' + (rightIdx + 1) + ' 张' : '';
+
+            saveState();
+        }
+
+        function renderPage(side, cardIndex) {
+            const flipInner = document.getElementById(side + 'FlipInner');
+            const frontEl = document.getElementById(side + 'Front');
+            const backEl = document.getElementById(side + 'Back');
+            const backTitle = document.getElementById(side + 'BackTitle');
+            const backContent = document.getElementById(side + 'BackContent');
+            const deleteBtn = document.getElementById('page' + (side === 'left' ? 'Left' : 'Right')).querySelector('.delete-icon');
+            const pageEl = document.getElementById('page' + (side === 'left' ? 'Left' : 'Right'));
+            const flipHint = pageEl.querySelector('.flip-hint');
+
+            const isFlipped = side === 'left' ? leftFlipped : rightFlipped;
+
+            if (cardIndex < cards.length) {
+                const card = cards[cardIndex];
+                frontEl.querySelector('.icon-display').textContent = card.icon || '📄';
+                frontEl.querySelector('.card-title').textContent = card.title;
+                frontEl.querySelector('.card-hint').textContent = '点击翻转查看详情';
+                backTitle.textContent = card.title;
+                backContent.textContent = card.content || '暂无详细内容';
+
+                // 3D 翻转动画
+                if (isFlipped) {
+                    flipInner.classList.add('flipped');
+                } else {
+                    flipInner.classList.remove('flipped');
+                }
+                deleteBtn.style.display = 'block';
+                flipHint.style.display = 'block';
+                pageEl.style.cursor = 'pointer';
+            } else {
+                // 空页
+                frontEl.querySelector('.icon-display').textContent = '📖';
+                frontEl.querySelector('.card-title').textContent = '空白页';
+                frontEl.querySelector('.card-hint').textContent = '添加更多卡片来填满';
+                flipInner.classList.remove('flipped');
+                deleteBtn.style.display = 'none';
+                flipHint.style.display = 'none';
+                pageEl.style.cursor = 'default';
+                if (side === 'left') leftFlipped = false;
+                else rightFlipped = false;
+            }
+        }
+
+        // ============ 翻页 ============
+        let isAnimating = false;
+
+        function flipLeft() {
+            const leftIdx = currentPage * 2;
+            if (leftIdx >= cards.length || isAnimating) return;
+            leftFlipped = !leftFlipped;
+            renderBook();
+        }
+
+        function flipRight() {
+            const rightIdx = currentPage * 2 + 1;
+            if (rightIdx >= cards.length || isAnimating) return;
+            rightFlipped = !rightFlipped;
+            renderBook();
+        }
+
+        function nextPage() {
+            const totalPages = Math.ceil(cards.length / 2);
+            if (currentPage >= totalPages - 1 || isAnimating) return;
+            isAnimating = true;
+            const wrapper = document.getElementById('bookWrapper');
+            wrapper.classList.add('turn-next');
+            leftFlipped = false;
+            rightFlipped = false;
+            currentPage++;
+            setTimeout(function() {
+                renderBook();
+                wrapper.classList.remove('turn-next');
+                isAnimating = false;
+            }, 280);
+        }
+
+        function prevPage() {
+            if (currentPage <= 0 || isAnimating) return;
+            isAnimating = true;
+            const wrapper = document.getElementById('bookWrapper');
+            wrapper.classList.add('turn-prev');
+            leftFlipped = false;
+            rightFlipped = false;
+            currentPage--;
+            setTimeout(function() {
+                renderBook();
+                wrapper.classList.remove('turn-prev');
+                isAnimating = false;
+            }, 280);
+        }
+
+        // ============ 键盘翻页 ============
+        document.addEventListener('keydown', function(e) {
+            if (document.getElementById('modalOverlay').classList.contains('show')) return;
+            if (e.key === 'ArrowRight') nextPage();
+            else if (e.key === 'ArrowLeft') prevPage();
+            else if (e.key === 'f' || e.key === 'F') {
+                if (e.ctrlKey || e.metaKey) return;
+                const leftIdx = currentPage * 2;
+                if (leftIdx < cards.length) { leftFlipped = !leftFlipped; renderBook(); }
+            }
+            else if (e.key === 'j' || e.key === 'J') {
+                const rightIdx = currentPage * 2 + 1;
+                if (rightIdx < cards.length) { rightFlipped = !rightFlipped; renderBook(); }
+            }
+        });
+
+        // ============ 添加卡片 ============
+        function showAddModal(index) {
+            editingIndex = index !== undefined ? index : -1;
+            const modal = document.getElementById('modalOverlay');
+            document.getElementById('modalTitle').textContent = editingIndex >= 0 ? '✏️ 编辑卡片' : '🌱 种下一张新卡片';
+            document.getElementById('btnSave').textContent = editingIndex >= 0 ? '💾 更新卡片' : '💾 保存卡片';
+
+            if (editingIndex >= 0 && editingIndex < cards.length) {
+                document.getElementById('inputTitle').value = cards[editingIndex].title;
+                document.getElementById('inputIcon').value = cards[editingIndex].icon || '';
+                document.getElementById('inputContent').value = cards[editingIndex].content || '';
+            } else {
+                document.getElementById('inputTitle').value = '';
+                document.getElementById('inputIcon').value = '';
+                document.getElementById('inputContent').value = '';
+            }
+            modal.classList.add('show');
+            setTimeout(() => document.getElementById('inputTitle').focus(), 100);
+        }
+
+        function saveCard() {
+            const title = document.getElementById('inputTitle').value.trim();
+            const icon = document.getElementById('inputIcon').value.trim() || '📄';
+            const content = document.getElementById('inputContent').value.trim();
+
+            if (!title) { alert('请给卡片起个标题～'); return; }
+            if (!content) { alert('请填写卡片内容～'); return; }
+
+            if (editingIndex >= 0 && editingIndex < cards.length) {
+                cards[editingIndex] = { title, icon, content };
+            } else {
+                cards.push({ title, icon, content });
+                currentPage = Math.floor((cards.length - 1) / 2);
+            }
+
+            saveCards();
+            renderBook();
+            closeModal();
+        }
+
+        // ============ 删除卡片 ============
+        function deleteCard(side) {
+            const cardIndex = side === 'left' ? currentPage * 2 : currentPage * 2 + 1;
+            if (cardIndex >= cards.length) return;
+
+            if (confirm('确定要删除「' + cards[cardIndex].title + '」吗？此操作不可恢复。')) {
+                cards.splice(cardIndex, 1);
+                saveCards();
+                if (side === 'left') leftFlipped = false;
+                else rightFlipped = false;
+                const totalPages = Math.ceil(cards.length / 2);
+                if (currentPage >= totalPages && currentPage > 0) currentPage--;
+                renderBook();
+            }
+        }
+
+        // ============ 弹窗 ============
+        function closeModal(event) {
+            if (event && event.target !== document.getElementById('modalOverlay')) return;
+            document.getElementById('modalOverlay').classList.remove('show');
+            editingIndex = -1;
+        }
+
+        // ============ 初始化 ============
+        loadCards();
+        loadState();
+        const totalPages = Math.ceil(cards.length / 2);
+        if (currentPage >= totalPages) currentPage = Math.max(0, totalPages - 1);
+        renderBook();
+
+        console.log('📗 园艺知识手册已就绪！');
+        console.log('   ← → 键翻页 | F键翻转左页 | J键翻转右页');
+        console.log('   共 ' + cards.length + ' 张卡片');
+    </script>
+</body>
+</html>
