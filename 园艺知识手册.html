@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📗 园艺知识手册</title>
+    <title>� 码农的养成</title>
     <style>
         :root {
             --bg: #f5faf5;
@@ -385,24 +385,36 @@
         .delete-icon:hover { opacity: 1 !important; background: #fff0f0; }
 
         @media (max-width: 700px) {
-            .book { flex-direction: column; max-width: 400px; border-radius: 12px 20px 20px 12px; }
+            .book { max-width: 100%; min-height: 380px; }
             .book::before { width: 6px; border-radius: 4px 0 0 4px; }
-            .book::after { display: none; }
-            .page-left, .page-right { padding: 25px 20px; min-height: 200px; }
-            .page-left { padding-left: 35px; }
-            .spine-line { display: none; }
-            .card-front .icon-display { font-size: 40px; }
-            .card-front .card-title { font-size: 18px; }
-            .card-back .card-content { font-size: 14px; max-height: 180px; }
-            .nav-arrows { bottom: -20px; }
-            .nav-arrow { width: 40px; height: 40px; font-size: 16px; }
+            .page-left, .page-right {
+                padding: 18px 10px;
+                min-height: 350px;
+                flex: 1;
+            }
+            .page-left { padding-left: 25px; }
+            .spine-line { display: block; }
+            .card-front .icon-display { font-size: 36px; }
+            .card-front .card-title { font-size: 15px; }
+            .card-back .card-title-back { font-size: 14px; }
+            .card-back .card-content { font-size: 12px; max-height: 220px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+            .nav-arrow { width: 38px; height: 38px; font-size: 16px; }
+            .flip-hint { font-size: 9px; top: 6px; }
+            .page-left .flip-hint { left: 8px; }
+            .page-right .flip-hint { right: 8px; }
+            .delete-icon { font-size: 12px; top: 4px; padding: 2px 6px; }
+            .page-left .delete-icon { right: 4px; }
+            .page-right .delete-icon { left: 4px; }
+            .page-num { font-size: 10px; bottom: 8px; }
+            .page-left .page-num { left: 8px; }
+            .page-right .page-num { right: 8px; }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>📗 园艺知识手册</h1>
-        <p class="subtitle">翻开每一页，都是生长的秘密 🌱</p>
+        <h1>� 码农的养成</h1>
+        <p class="subtitle">翻开每一页，都是成长的代码 🌱</p>
     </div>
 
     <div class="toolbar">
@@ -468,13 +480,13 @@
     <!-- 添加/编辑弹窗 -->
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
         <div class="modal" onclick="event.stopPropagation()">
-            <h3 id="modalTitle">🌱 种下一张新卡片</h3>
+            <h3 id="modalTitle">💡 种下一张知识卡片</h3>
             <label>📛 卡片标题</label>
-            <input type="text" id="inputTitle" placeholder="例如：多肉植物的养护秘诀">
+            <input type="text" id="inputTitle" placeholder="例如：CSS Flexbox 速查">
             <label>🎨 图标（Emoji）</label>
-            <input type="text" id="inputIcon" placeholder="例如：🪴" maxlength="4">
+            <input type="text" id="inputIcon" placeholder="例如：📐" maxlength="4">
             <label>📝 详细内容</label>
-            <textarea id="inputContent" placeholder="写下你想记住的知识点..."></textarea>
+            <textarea id="inputContent" placeholder="写下你想记住的代码知识点..."></textarea>
             <div class="btn-row">
                 <button class="tool-btn" onclick="closeModal()">取消</button>
                 <button class="tool-btn primary" id="btnSave" onclick="saveCard()">💾 保存卡片</button>
@@ -484,8 +496,8 @@
 
     <script>
         // ============ 数据管理 ============
-        const STORAGE_KEY = 'gardenHandbook_cards_v1';
-        const STATE_KEY = 'gardenHandbook_state_v1';
+        const STORAGE_KEY = 'codeGrow_cards_v1';
+        const STATE_KEY = 'codeGrow_state_v1';
 
         let cards = [];
         let currentPage = 0; // 当前显示哪一页（每页显示2张卡片）
@@ -523,12 +535,12 @@
 
         function getDefaultCards() {
             return [
-                { title: '多肉植物浇水法则', icon: '🪴', content: '多肉植物浇水遵循"干透浇透"原则。\n\n1. 用手指插入土壤2-3cm，完全干燥再浇\n2. 夏季休眠期减少浇水，冬季保持偏干\n3. 浇水时避开叶片，直接浇根部\n4. 使用透气性好的颗粒土\n\n记住：多肉大多死于浇水过多，而非过少。' },
-                { title: '薄荷的日常养护', icon: '🌿', content: '薄荷是最好养的香草之一！\n\n☀️ 光照：喜欢充足阳光，但夏季需适当遮阴\n💧 浇水：保持土壤湿润，表土干了就浇\n🌡️ 温度：15-25°C最佳，耐寒也耐热\n✂️ 修剪：经常摘心促分枝，越剪越旺\n\n小提示：薄荷侵略性很强，建议盆栽而非地栽。' },
-                { title: '铜钱草养护指南', icon: '🪷', content: '铜钱草（香菇草）寓意财运滚滚！\n\n💧 半水半土最佳，保持根部湿润\n☀️ 喜光但忌暴晒，散射光最好\n🌡️ 喜温暖，冬季不低于5°C\n🔄 每周转动花盆保证均匀生长\n\n黄叶原因：光照不足或水质问题\n换水频率：夏季3-5天，冬季7-10天' },
-                { title: '常见土壤配比', icon: '🪹', content: '不同植物需要不同配比的土壤：\n\n🌵 多肉配方：泥炭土:珍珠岩:蛭石=3:1:1\n🌿 观叶植物：园土:腐叶土:河沙=4:4:2\n🌸 开花植物：园土:腐叶土:河沙=4:3:3\n🌱 育苗土：泥炭土:蛭石=3:1\n\n通用原则：保证疏松透气、排水良好' },
-                { title: '室内植物摆放风水', icon: '🏡', content: '植物摆放讲究方位与气场：\n\n东/东南方：适合放绿萝、发财树（木旺）\n南方：适合开红花的植物（火旺）\n西南/东北：适合多肉、仙人掌（土旺）\n北方：适合水培植物（水旺）\n\n卧室不宜放太多植物，夜间会消耗氧气\n书房放文竹、兰花，有助于静心' },
-                { title: '扦插繁殖入门', icon: '✂️', content: '扦插是最简单的繁殖方式：\n\n🌱 茎插：选健康枝条，剪10-15cm，去下部叶片，插入基质\n🍃 叶插：多肉叶片平放土面，保持微湿\n💧 水插：放入清水中，每2天换水，生根后移栽\n\n最佳季节：春秋两季（15-25°C）\n关键：保持湿度、避免直射光、耐心等待' }
+                { title: 'CSS Flexbox 速查', icon: '📐', content: 'Flexbox 一维布局利器：\n\n容器属性：\n· display: flex\n· flex-direction: row | column\n· justify-content: 主轴对齐\n· align-items: 交叉轴对齐\n· flex-wrap: 是否换行\n· gap: 间距\n\n项目属性：\n· flex: 1 (占满剩余空间)\n· align-self: 单独对齐\n· order: 排序' },
+                { title: 'Git 常用命令', icon: '🔀', content: '日常 Git 工作流：\n\ngit init           // 初始化\ngit add .          // 暂存所有\ngit commit -m ""   // 提交\ngit push           // 推送\ngit pull           // 拉取\ngit status         // 查看状态\ngit log --oneline  // 简洁日志\ngit branch -M main // 重命名分支\ngit checkout -b xx // 新建并切换分支\n\n记住：先 pull 再 push！' },
+                { title: 'JavaScript 数组方法', icon: '📋', content: '常用数组方法：\n\n· map()    — 转换每个元素\n· filter() — 筛选符合条件的\n· reduce() — 累加为单个值\n· find()   — 找到第一个匹配\n· some()   — 任意项满足\n· every()  — 全部满足\n· includes() — 是否包含某值\n· slice()  — 截取子数组\n· splice() — 增删改\n\nmap/filter/reduce 是三剑客！' },
+                { title: 'Python 列表推导式', icon: '🐍', content: '一行代码生成列表：\n\n# 基本形式\n[x*2 for x in range(10)]\n\n# 带条件过滤\n[x for x in range(20) if x%2==0]\n\n# 嵌套循环\n[(x,y) for x in "ab" for y in "12"]\n\n# 字典推导\n{k:v for k,v in d.items() if v>0}\n\n# 集合推导\n{x**2 for x in range(10)}\n\nPythonic！简洁优雅' },
+                { title: 'HTTP 状态码速记', icon: '🌐', content: '常见 HTTP 状态码：\n\n2xx 成功\n· 200 OK\n· 201 Created\n\n3xx 重定向\n· 301 永久 / 302 临时\n· 304 未修改（缓存）\n\n4xx 客户端错误\n· 400 Bad Request\n· 401 未认证 / 403 禁止\n· 404 Not Found\n· 429 请求过多\n\n5xx 服务端\n· 500 服务器内部错误\n· 502 网关 / 503 不可用' },
+                { title: 'VS Code 快捷键', icon: '⌨️', content: '效率快捷键：\n\n编辑：\n· Ctrl+D — 选中下一个相同词\n· Ctrl+Shift+L — 选中所有相同\n· Alt+↑/↓ — 移动行\n· Ctrl+/ — 注释\n· Ctrl+Shift+K — 删除行\n\n导航：\n· Ctrl+P — 快速打开文件\n· Ctrl+Shift+P — 命令面板\n· Ctrl+` — 终端\n· Ctrl+B — 侧边栏\n\n多光标：\n· Alt+Click — 添加光标\n· Ctrl+Alt+↑/↓ — 上下加光标' }
             ];
         }
 
@@ -666,7 +678,7 @@
         function showAddModal(index) {
             editingIndex = index !== undefined ? index : -1;
             const modal = document.getElementById('modalOverlay');
-            document.getElementById('modalTitle').textContent = editingIndex >= 0 ? '✏️ 编辑卡片' : '🌱 种下一张新卡片';
+            document.getElementById('modalTitle').textContent = editingIndex >= 0 ? '✏️ 编辑卡片' : '💡 种下一张知识卡片';
             document.getElementById('btnSave').textContent = editingIndex >= 0 ? '💾 更新卡片' : '💾 保存卡片';
 
             if (editingIndex >= 0 && editingIndex < cards.length) {
@@ -732,7 +744,7 @@
         if (currentPage >= totalPages) currentPage = Math.max(0, totalPages - 1);
         renderBook();
 
-        console.log('📗 园艺知识手册已就绪！');
+        console.log('� 码农的养成已就绪！');
         console.log('   ← → 键翻页 | F键翻转左页 | J键翻转右页');
         console.log('   共 ' + cards.length + ' 张卡片');
     </script>
