@@ -372,6 +372,9 @@
         <button class="menu-btn" id="btn-editor" onclick="showEditor()">🧑‍🌾 栽培管理</button>
         <button class="menu-btn" id="btn-runapp" onclick="showRunApp()" style="display:none;">🍅 收获中</button>
         <span class="spacer"></span>
+        <button class="menu-btn" onclick="exportData()" title="导出数据备份">📤 导出</button>
+        <button class="menu-btn" onclick="importData()" title="从备份恢复数据">📥 导入</button>
+        <input type="file" id="importFileInput" style="display:none" accept=".json" onchange="handleImport(event)">
         <!-- 四季调色盘 -->
         <div class="theme-panel-container">
             <button class="theme-toggle-btn" onclick="toggleThemePanel()" title="四季调色盘">🎨</button>
@@ -464,6 +467,60 @@
         function addHarvest() {
             let c = loadHarvestCount() + 1;
             localStorage.setItem('harvestCount', c);
+        }
+
+        // ============ 导入导出 ============
+        function exportData() {
+            const data = {
+                apps: loadApps(),
+                harvestCount: loadHarvestCount(),
+                theme: currentTheme,
+                exportedAt: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'xiaoyuanding_backup_' + new Date().toISOString().slice(0,10) + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importData() {
+            document.getElementById('importFileInput').click();
+        }
+
+        function handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!data.apps || !Array.isArray(data.apps)) {
+                        alert('⚠️ 文件格式不正确，请选择有效的备份文件。');
+                        return;
+                    }
+                    if (confirm('导入将覆盖当前的试验田数据（共 ' + data.apps.length + ' 个应用），确定继续吗？\n\n导出时间：' + (data.exportedAt || '未知'))) {
+                        saveApps(data.apps);
+                        apps = loadApps();
+                        if (data.harvestCount !== undefined) {
+                            localStorage.setItem('harvestCount', data.harvestCount);
+                        }
+                        if (data.theme) {
+                            applyTheme(data.theme);
+                        }
+                        renderLibrary();
+                        alert('✅ 导入成功！共恢复了 ' + data.apps.length + ' 个应用 🌱');
+                    }
+                } catch (err) {
+                    alert('⚠️ 文件解析失败，请检查文件是否完整。');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
         }
 
         function getDefaultApps() {
