@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>倒计时花园</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(180deg,#e8f5e8 0%,#c8e6c8 50%,#a5d6a7 100%);min-height:100vh;font-family:'PingFang SC','Microsoft YaHei',sans-serif;padding:15px}
+.header{text-align:center;padding:15px 0 10px;color:#3d7a3d}
+.header h1{font-size:22px}
+.header p{font-size:12px;opacity:.6;margin-top:2px}
+.list{display:flex;flex-direction:column;gap:12px;max-width:420px;margin:0 auto;padding-bottom:100px}
+.card{background:rgba(255,255,255,.88);border-radius:16px;padding:16px;box-shadow:0 4px 16px rgba(0,0,0,.06);display:flex;align-items:center;gap:12px;position:relative;transition:all .3s}
+.card.past{opacity:.55}
+.card .emoji{font-size:36px;flex-shrink:0;min-width:44px;text-align:center}
+.card .info{flex:1;min-width:0}
+.card .title{font-size:15px;font-weight:bold;color:#2d3a2d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .date{font-size:11px;color:#999;margin-top:2px}
+.card .days{font-size:28px;font-weight:bold;flex-shrink:0;text-align:right;min-width:55px}
+.card .days.future{color:#3d7a3d}
+.card .days.today{color:#e67e22;animation:pulse 1.5s infinite}
+.card .days.past-num{color:#c0392b}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.card .days-label{font-size:10px;color:#999;text-align:right}
+.card .del{position:absolute;top:8px;right:8px;background:none;border:none;color:#ccc;font-size:14px;cursor:pointer;padding:2px 6px;border-radius:50%}
+.card .del:hover{color:#e57373;background:#fff0f0}
+.add-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.95);padding:14px 16px;display:flex;gap:8px;box-shadow:0 -2px 16px rgba(0,0,0,.06);max-width:420px;margin:0 auto;border-radius:20px 20px 0 0;z-index:10}
+.add-bar input,.add-bar button{padding:10px 14px;border-radius:20px;border:2px solid #c8e6c8;font-size:14px;outline:none;font-family:inherit}
+.add-bar input{flex:1;min-width:0}
+.add-bar input:focus{border-color:#4a8f4a}
+.add-bar button{background:#3d7a3d;color:white;border-color:#3d7a3d;cursor:pointer;font-weight:bold;white-space:nowrap}
+.add-bar button:hover{opacity:.85}
+.empty{text-align:center;color:#999;padding:50px 20px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="header"><h1>倒计时花园</h1><p>种下期待，等待花开</p></div>
+<div class="list" id="list"><div class="empty">还没有倒计时，在底部添加一个吧</div></div>
+<div class="add-bar">
+<input type="text" id="nameInput" placeholder="事件名称">
+<input type="date" id="dateInput">
+<button onclick="addEvent()">+</button>
+</div>
+<script>
+var STOR='cd_garden_v1';
+var events=[];
+var plants=['\u{1F330}','\u{1F331}','\u{1F33F}','\u{1F333}','\u{1F337}','\u{1F338}','\u{1F33B}','\u{1F940}'];
+
+function load(){
+var s=localStorage.getItem(STOR);
+if(s)events=JSON.parse(s);
+render();
+}
+function save(){localStorage.setItem(STOR,JSON.stringify(events))}
+function getPlant(days){
+if(days<=0)return '\u{1F940}';
+if(days>365)return '\u{1F330}';
+if(days>180)return '\u{1F331}';
+if(days>90)return '\u{1F33F}';
+if(days>30)return '\u{1F333}';
+if(days>7)return '\u{1F337}';
+return '\u{1F338}';
+}
+function addEvent(){
+var n=document.getElementById('nameInput').value.trim();
+var d=document.getElementById('dateInput').value;
+if(!n||!d){alert('请填写名称和日期');return}
+events.push({name:n,date:d+'T23:59:59'});
+events.sort(function(a,b){return new Date(a.date)-new Date(b.date)});
+save();render();
+document.getElementById('nameInput').value='';
+document.getElementById('dateInput').value='';
+}
+function removeEvent(i){
+if(confirm('删除 "'+events[i].name+'" ？')){events.splice(i,1);save();render()}
+}
+function render(){
+var list=document.getElementById('list');
+if(events.length===0){list.innerHTML='<div class="empty">还没有倒计时，在底部添加一个吧</div>';return}
+var now=new Date();
+var html='';
+for(var i=0;i<events.length;i++){
+var e=events[i];
+var target=new Date(e.date);
+var diff=target.getTime()-now.getTime();
+var days=Math.ceil(diff/(86400000));
+var cls='',dayCls='',emoji='',label='';
+if(days>0){cls='';dayCls='future';emoji=getPlant(days);label='天后'}
+else if(days===0){cls='';dayCls='today';emoji='\u{1F33B}';label='今天！'}
+else{cls='past';dayCls='past-num';emoji='';label='天前'}
+var dStr=target.getFullYear()+'/'+(target.getMonth()+1)+'/'+target.getDate();
+html+='<div class="card '+cls+'"><div class="emoji">'+emoji+'</div><div class="info"><div class="title">'+e.name+'</div><div class="date">'+dStr+'</div></div><div><div class="days '+dayCls+'">'+(days===0?'今天':Math.abs(days))+'</div><div class="days-label">'+label+'</div></div><button class="del" onclick="removeEvent('+i+')">x</button></div>';
+}
+list.innerHTML=html;
+}
+load();
+setInterval(render,60000);
+</script>
+</body>
+</html>
