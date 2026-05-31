@@ -1,4 +1,4 @@
-var CACHE = 'xiaoyuan-v2';
+var CACHE = 'xiaoyuan-v3';
 var URLS = [
   '/xiaoshiyanshi/',
   '/xiaoshiyanshi/index.html',

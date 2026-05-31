@@ -1260,6 +1260,10 @@
         // ============ PWA 注册 ============
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
+            // 清除旧缓存，强制更新
+            caches.keys().then(function(names) {
+                for (var n of names) { if (n !== 'xiaoyuan-v3') caches.delete(n); }
+            });
         }
         // 安装提示
         window.addEventListener('beforeinstallprompt', function(e) {
