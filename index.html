@@ -399,6 +399,7 @@
         <span class="spacer"></span>
         <button class="menu-btn" onclick="exportData()" title="导出数据备份">📤 导出</button>
         <button class="menu-btn" onclick="importData()" title="从备份恢复数据">📥 导入</button>
+        <button class="menu-btn" onclick="showPasteImport()" title="从剪贴板粘贴数据">📋 粘贴</button>
         <input type="file" id="importFileInput" style="display:none" accept=".json" onchange="handleImport(event)">
         <!-- 四季调色盘 -->
         <div class="theme-panel-container">
@@ -522,30 +523,50 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (!data.apps || !Array.isArray(data.apps)) {
-                        alert('⚠️ 文件格式不正确，请选择有效的备份文件。');
-                        return;
-                    }
-                    if (confirm('导入将覆盖当前的试验田数据（共 ' + data.apps.length + ' 个应用），确定继续吗？\n\n导出时间：' + (data.exportedAt || '未知'))) {
-                        saveApps(data.apps);
-                        apps = loadApps();
-                        if (data.harvestCount !== undefined) {
-                            localStorage.setItem('harvestCount', data.harvestCount);
-                        }
-                        if (data.theme) {
-                            applyTheme(data.theme);
-                        }
-                        renderLibrary();
-                        alert('✅ 导入成功！共恢复了 ' + data.apps.length + ' 个应用 🌱');
-                    }
-                } catch (err) {
-                    alert('⚠️ 文件解析失败，请检查文件是否完整。');
-                }
+                importJsonStr(e.target.result);
             };
             reader.readAsText(file);
             event.target.value = '';
+        }
+
+        // ============ 粘贴导入 ============
+        function showPasteImport() {
+            document.getElementById('pastePanel').classList.add('show');
+            document.getElementById('pasteOverlay').classList.add('show');
+        }
+        function closePasteImport() {
+            document.getElementById('pastePanel').classList.remove('show');
+            document.getElementById('pasteOverlay').classList.remove('show');
+        }
+        function doPasteImport() {
+            var text = document.getElementById('pasteTextarea').value.trim();
+            if (!text) { alert('请先粘贴数据～'); return; }
+            importJsonStr(text);
+            closePasteImport();
+            document.getElementById('pasteTextarea').value = '';
+        }
+        function importJsonStr(text) {
+            try {
+                const data = JSON.parse(text);
+                if (!data.apps || !Array.isArray(data.apps)) {
+                    alert('数据格式不正确，请检查后再试。');
+                    return;
+                }
+                if (confirm('导入将覆盖当前数据（共 ' + data.apps.length + ' 个应用），确定继续吗？')) {
+                    saveApps(data.apps);
+                    apps = loadApps();
+                    if (data.harvestCount !== undefined) {
+                        localStorage.setItem('harvestCount', data.harvestCount);
+                    }
+                    if (data.theme) {
+                        applyTheme(data.theme);
+                    }
+                    renderLibrary();
+                    alert('✅ 导入成功！共恢复了 ' + data.apps.length + ' 个应用');
+                }
+            } catch (err) {
+                alert('数据解析失败，请检查JSON格式是否正确。');
+            }
         }
 
         function getDefaultApps() {
@@ -1323,6 +1344,15 @@
         <textarea id="codeTextarea" readonly style="width:100%;height:200px;background:#1a1a2e;color:#c0e0c0;border:none;border-radius:12px;padding:14px;font-family:'Courier New',monospace;font-size:11px;resize:vertical;outline:none;line-height:1.5;" onfocus="this.select()"></textarea>
         <button class="btn-shake" onclick="copyCode()" style="margin-top:10px;">📋 复制代码</button>
         <span id="copyOK" style="display:none;color:var(--green);font-size:13px;margin-left:8px;">已复制!</span>
+    </div>
+    <!-- 粘贴导入弹窗 -->
+    <div class="overlay" id="pasteOverlay" onclick="closePasteImport()"></div>
+    <div class="divination-panel" id="pastePanel" style="max-width:450px;">
+        <button class="close-btn" onclick="closePasteImport()">✕</button>
+        <h3 style="color:var(--green);margin-bottom:10px;">📋 粘贴数据导入</h3>
+        <p style="font-size:12px;opacity:0.5;margin-bottom:8px;">从旧版导出的 JSON 文件内容粘贴到下方</p>
+        <textarea id="pasteTextarea" placeholder="粘贴导出的JSON数据..." style="width:100%;height:180px;background:#1a1a2e;color:#c0e0c0;border:none;border-radius:12px;padding:14px;font-family:'Courier New',monospace;font-size:12px;resize:vertical;outline:none;"></textarea>
+        <button class="btn-shake" onclick="doPasteImport()" style="margin-top:10px;">📥 导入数据</button>
     </div>
 </body>
 </html>
