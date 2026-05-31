@@ -2,7 +2,12 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="小园丁">
+    <meta name="theme-color" content="#3d7a3d">
+    <link rel="manifest" href="manifest.json">
     <title>🌳 小园丁的试验田</title>
     <style>
         :root {
@@ -1062,7 +1067,7 @@
                 // 重新渲染爻线
                 var container = document.getElementById('yaoContainer');
                 container.innerHTML = '';
-                for (var i = 0; i < yaoLines.length; i++) {
+                for (var i = yaoLines.length - 1; i >= 0; i--) {
                     var el = document.createElement('div');
                     el.className = 'yao-line';
                     el.textContent = yaoLines[i] === 1 ? '▅▅▅▅▅▅▅' : '▅▅   ▅▅';
@@ -1102,7 +1107,8 @@
             var el = document.createElement('div');
             el.className = 'yao-line born';
             el.textContent = line;
-            document.getElementById('yaoContainer').appendChild(el);
+            var container = document.getElementById('yaoContainer');
+            container.insertBefore(el, container.firstChild);
             if (yaoCount >= 6) {
                 document.getElementById('btnShake').style.display = 'none';
                 divinationDone = true;
@@ -1147,9 +1153,9 @@
                     { text:'忌赖床', gentle:'🌅 被窝很暖，但清晨的光更值得' }
                 ];
                 function weightedPick(items) {
-                    var total = items.reduce(function(s, i) { return s + i.weight; }, 0);
+                    var total = items.reduce(function(s, i) { return s + (i.weight || 1); }, 0);
                     var r = Math.random() * total;
-                    for (var k = 0; k < items.length; k++) { r -= items[k].weight; if (r <= 0) return items[k]; }
+                    for (var k = 0; k < items.length; k++) { r -= (items[k].weight || 1); if (r <= 0) return items[k]; }
                     return items[items.length - 1];
                 }
                 function pickN(items, n) {
@@ -1184,12 +1190,13 @@
             yaoLines = data.lines;
             var container = document.getElementById('yaoContainer');
             container.innerHTML = '';
-            data.lines.forEach(function(l) {
+            for (var i = data.lines.length - 1; i >= 0; i--) {
+                var l = data.lines[i];
                 var el = document.createElement('div');
                 el.className = 'yao-line';
                 el.textContent = l === 1 ? '▅▅▅▅▅▅▅' : '▅▅   ▅▅';
                 container.appendChild(el);
-            });
+            }
                         var html = '<div class="gua-name">䷀ ' + data.guaName + '</div>';
             html += '<p style="text-align:center;font-style:italic;margin-bottom:10px;">"' + data.humor + '"</p>';
             if (data.yis && data.jis) {
@@ -1205,6 +1212,10 @@
         checkDivinationReset();
         if (localStorage.getItem('divinationResult')) {
             restoreDivination();
+        }
+        // ============ PWA 注册 ============
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
         }
     </script>
     <!-- 遮罩 -->

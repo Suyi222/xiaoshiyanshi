@@ -1,0 +1,15 @@
+{
+  "name": "小园丁的试验田",
+  "short_name": "小园丁",
+  "description": "一个温暖的个人工具箱花园",
+  "start_url": "/xiaoshiyanshi/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5faf5",
+  "theme_color": "#3d7a3d",
+  "icons": [{
+    "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🌱</text></svg>",
+    "sizes": "100x100",
+    "type": "image/svg+xml"
+  }]
+}
