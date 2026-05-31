@@ -557,8 +557,23 @@
 
         let apps = loadApps();
         if (apps.length === 0) {
-            apps = getDefaultApps();
-            saveApps(apps);
+            // 尝试从预置数据文件加载
+            fetch('default_data.json')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.apps && data.apps.length > 0) {
+                        apps = data.apps;
+                        saveApps(apps);
+                        if (data.harvestCount) localStorage.setItem('harvestCount', data.harvestCount);
+                        if (data.theme) { currentTheme = data.theme; applyTheme(currentTheme); }
+                        renderLibrary();
+                    }
+                })
+                .catch(function() {
+                    // 网络加载失败，使用默认应用
+                    apps = getDefaultApps();
+                    saveApps(apps);
+                });
         }
         let currentRunningApp = null;
         let currentTheme = localStorage.getItem('labTheme') || 'summer';

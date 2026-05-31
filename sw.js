@@ -1,7 +1,9 @@
 var CACHE = 'xiaoyuan-v2';
 var URLS = [
   '/xiaoshiyanshi/',
-  '/xiaoshiyanshi/index.html'
+  '/xiaoshiyanshi/index.html',
+  '/xiaoshiyanshi/default_data.json',
+  '/xiaoshiyanshi/manifest.json'
 ];
 
 self.addEventListener('install', function(e) {
