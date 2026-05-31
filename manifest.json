@@ -1,19 +1,17 @@
-{
-  "name": "小园丁的试验田",
-  "short_name": "小园丁",
-  "start_url": ".",
+﻿{
+  "name": "XiaoYuanDing",
+  "short_name": "Garden",
+  "start_url": "/xiaoshiyanshi/",
   "display": "standalone",
   "background_color": "#f5faf5",
   "theme_color": "#3d7a3d",
   "icons": [{
-    "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%23f5faf5' rx='32'/><text x='96' y='130' text-anchor='middle' font-size='110'>🌱</text></svg>",
+    "src": "icon-192.png",
     "sizes": "192x192",
-    "type": "image/svg+xml",
-    "purpose": "any maskable"
+    "type": "image/png"
   },{
-    "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%23f5faf5' rx='64'/><text x='256' y='370' text-anchor='middle' font-size='300'>🌱</text></svg>",
+    "src": "icon-512.png",
     "sizes": "512x512",
-    "type": "image/svg+xml",
-    "purpose": "any maskable"
+    "type": "image/png"
   }]
 }
