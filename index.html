@@ -618,7 +618,7 @@
                 const realIndex = apps.indexOf(app);
                 const card = document.createElement('div');
                 card.className = 'card';
-                card.innerHTML = `<span class="icon">${app.icon}</span><span class="name">${app.name}</span><span class="tag">${app.category==='orchard'?'小果园':'菜篮子'}</span><div class="card-actions"><button class="card-act-btn edit-btn" onclick="event.stopPropagation();showEditModal(${realIndex})" title="编辑">✏️</button><button class="card-act-btn code-btn" onclick="event.stopPropagation();showCodeModal(${realIndex})" title="查看代码">&lt;/&gt;</button><button class="card-act-btn del-btn" onclick="event.stopPropagation();deleteApp(${realIndex})" title="删除">✕</button></div>`;
+                card.innerHTML = `<span class="icon">${app.icon}</span><span class="name">${app.name}</span><span class="tag">${app.category==='orchard'?'小果园':'菜篮子'}</span><div class="card-actions"><button class="card-act-btn edit-btn" onclick="event.stopPropagation();showEditModal(${realIndex})" title="编辑">✏️</button><button class="card-act-btn code-btn" onclick="event.stopPropagation();showCodeModal(${realIndex})" title="查看代码">&lt;/&gt;</button><button class="card-act-btn code-btn" onclick="event.stopPropagation();updateAppCode(${realIndex})" title="更新代码" style="color:#e67e22;">⬆</button><button class="card-act-btn del-btn" onclick="event.stopPropagation();deleteApp(${realIndex})" title="删除">✕</button></div>`;
                 card.onclick = () => {
                     currentRunningApp = app;
                     addHarvest();
@@ -642,6 +642,7 @@
         }
 
         // ============ 栽培管理 ============
+        let updatingAppIndex = -1; // -1表示新建，>=0表示更新现有卡片
         function runEditorCode() {
             const code = document.getElementById('editorTextarea').value.trim();
             if (!code || code === '欢迎来到育苗间！你想种下怎样的植物？') { alert('先播下种子再试收获呀～'); return; }
@@ -651,6 +652,16 @@
         function saveEditorCode() {
             const code = document.getElementById('editorTextarea').value.trim();
             if (!code || code === '欢迎来到育苗间！你想种下怎样的植物？') { alert('没有种子可收入谷仓哦～'); return; }
+            if (updatingAppIndex >= 0) {
+                // 更新现有卡片代码（保留名称、图标、分类和数据）
+                apps[updatingAppIndex].code = code;
+                saveApps(apps);
+                renderLibrary();
+                alert('「' + apps[updatingAppIndex].name + '」代码已更新！原数据不变 🌱');
+                updatingAppIndex = -1;
+                showLibrary();
+                return;
+            }
             const name = prompt('给这株新苗起个名字吧：', '我的新苗');
             if (!name) return;
             const icon = prompt('为它选一枚标签（emoji）：', '📄') || '📄';
@@ -660,6 +671,13 @@
             renderLibrary();
             alert('已收入谷仓！');
             showLibrary();
+        }
+
+        function updateAppCode(index) {
+            updatingAppIndex = index;
+            document.getElementById('editorTextarea').value = apps[index].code;
+            document.getElementById('previewFrame').src = '';
+            showEditor();
         }
 
         function deleteApp(index) {
