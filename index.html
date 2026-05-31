@@ -205,6 +205,22 @@
         }
         .card:hover .delete-btn { opacity: 1; }
         .card .delete-btn:hover { color: #e57373; background: #fff0f0; }
+        /* 卡片操作按钮组 */
+        .card-actions {
+            position: absolute; top: 6px; right: 6px;
+            display: flex; gap: 2px; opacity: 0; transition: all 0.2s;
+        }
+        .card:hover .card-actions { opacity: 1; }
+        .card-act-btn {
+            background: transparent; border: none;
+            color: #bbb; cursor: pointer; font-size: 13px;
+            padding: 3px 7px; border-radius: 50%;
+            transition: all 0.2s; line-height: 1;
+        }
+        .card-act-btn:hover { background: #f5faf5; }
+        .card-act-btn.edit-btn:hover { color: var(--accent); }
+        .card-act-btn.code-btn:hover { color: #4a90d9; }
+        .card-act-btn.del-btn:hover { color: #e57373; background: #fff0f0; }
         .card.add-card {
             border-style: dashed; border-color: var(--accent);
             color: var(--accent); opacity: 0.8;
@@ -264,7 +280,11 @@
             .card { width: 140px; height: 140px; padding: 15px; }
             .card .icon { font-size: 30px; }
             .card .name { font-size: 13px; }
+            .card .tag { font-size: 10px; }
             .main-content { padding: 20px; }
+            .card-actions { opacity: 1 !important; }
+            .card-act-btn { font-size: 12px; padding: 2px 5px; }
+            .card-grid { gap: 12px; }
         }
         /* 时间日期节气 */
         .time-bar {
@@ -593,7 +613,7 @@
                 const realIndex = apps.indexOf(app);
                 const card = document.createElement('div');
                 card.className = 'card';
-                card.innerHTML = `<span class="icon">${app.icon}</span><span class="name">${app.name}</span><span class="tag">点击收获</span><button class="delete-btn" onclick="event.stopPropagation();deleteApp(${realIndex})">✕</button>`;
+                card.innerHTML = `<span class="icon">${app.icon}</span><span class="name">${app.name}</span><span class="tag">${app.category==='orchard'?'小果园':'菜篮子'}</span><div class="card-actions"><button class="card-act-btn edit-btn" onclick="event.stopPropagation();showEditModal(${realIndex})" title="编辑">✏️</button><button class="card-act-btn code-btn" onclick="event.stopPropagation();showCodeModal(${realIndex})" title="查看代码">&lt;/&gt;</button><button class="card-act-btn del-btn" onclick="event.stopPropagation();deleteApp(${realIndex})" title="删除">✕</button></div>`;
                 card.onclick = () => {
                     currentRunningApp = app;
                     addHarvest();
@@ -644,6 +664,60 @@
                 renderLibrary();
                 showLibrary();
             }
+        }
+
+        // ============ 编辑卡片 ============
+        let editingAppIndex = -1;
+        function showEditModal(index) {
+            editingAppIndex = index;
+            const app = apps[index];
+            document.getElementById('editName').value = app.name;
+            document.getElementById('editIcon').value = app.icon || '';
+            document.getElementById('editCategory').value = app.category || 'orchard';
+            document.getElementById('editPanel').classList.add('show');
+            document.getElementById('editOverlay').classList.add('show');
+        }
+        function closeEditModal() {
+            document.getElementById('editPanel').classList.remove('show');
+            document.getElementById('editOverlay').classList.remove('show');
+        }
+        function saveEditCard() {
+            const name = document.getElementById('editName').value.trim();
+            const icon = document.getElementById('editIcon').value.trim() || '📄';
+            const category = document.getElementById('editCategory').value;
+            if (!name) { alert('名称不能为空～'); return; }
+            apps[editingAppIndex].name = name;
+            apps[editingAppIndex].icon = icon;
+            apps[editingAppIndex].category = category;
+            saveApps(apps);
+            renderLibrary();
+            closeEditModal();
+        }
+
+        // ============ 查看/复制代码 ============
+        function showCodeModal(index) {
+            const app = apps[index];
+            document.getElementById('codeTitle').textContent = '📋 ' + app.name;
+            document.getElementById('codeTextarea').value = app.code || '';
+            document.getElementById('codePanel').classList.add('show');
+            document.getElementById('codeOverlay').classList.add('show');
+            document.getElementById('copyOK').style.display = 'none';
+        }
+        function closeCodeModal() {
+            document.getElementById('codePanel').classList.remove('show');
+            document.getElementById('codeOverlay').classList.remove('show');
+        }
+        function copyCode() {
+            const ta = document.getElementById('codeTextarea');
+            ta.select();
+            navigator.clipboard.writeText(ta.value).then(function() {
+                document.getElementById('copyOK').style.display = 'inline';
+                setTimeout(function() { document.getElementById('copyOK').style.display = 'none'; }, 2000);
+            }).catch(function() {
+                document.execCommand('copy');
+                document.getElementById('copyOK').style.display = 'inline';
+                setTimeout(function() { document.getElementById('copyOK').style.display = 'none'; }, 2000);
+            });
         }
 
         // ============ 分类折叠 ============
@@ -1147,6 +1221,33 @@
     <div class="fairy" id="fairy" onclick="fairySpeak()">
         <span class="icon">🌱</span>
         <span class="bubble" id="fairyBubble" style="display:none;"></span>
+    </div>
+    <!-- 编辑卡片弹窗 -->
+    <div class="overlay" id="editOverlay" onclick="closeEditModal()"></div>
+    <div class="divination-panel" id="editPanel">
+        <button class="close-btn" onclick="closeEditModal()">✕</button>
+        <h3 style="color:var(--green);margin-bottom:12px;">✏️ 编辑小苗</h3>
+        <div style="text-align:left;">
+            <label style="font-size:13px;opacity:0.6;display:block;margin:8px 0 4px;">📛 名称</label>
+            <input type="text" id="editName" style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;outline:none;font-family:inherit;color:var(--text);background:var(--bg);">
+            <label style="font-size:13px;opacity:0.6;display:block;margin:8px 0 4px;">🎨 图标（Emoji）</label>
+            <input type="text" id="editIcon" style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;outline:none;font-family:inherit;color:var(--text);background:var(--bg);" maxlength="4">
+            <label style="font-size:13px;opacity:0.6;display:block;margin:8px 0 4px;">📂 分类</label>
+            <select id="editCategory" style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;outline:none;font-family:inherit;color:var(--text);background:var(--bg);">
+                <option value="orchard">🧰 小果园</option>
+                <option value="basket">🎮 菜篮子</option>
+            </select>
+        </div>
+        <button class="btn-shake" onclick="saveEditCard()" style="margin-top:15px;">💾 保存</button>
+    </div>
+    <!-- 查看代码弹窗 -->
+    <div class="overlay" id="codeOverlay" onclick="closeCodeModal()"></div>
+    <div class="divination-panel" id="codePanel" style="max-width:450px;">
+        <button class="close-btn" onclick="closeCodeModal()">✕</button>
+        <h3 style="color:var(--green);margin-bottom:10px;">📋 <span id="codeTitle">查看代码</span></h3>
+        <textarea id="codeTextarea" readonly style="width:100%;height:200px;background:#1a1a2e;color:#c0e0c0;border:none;border-radius:12px;padding:14px;font-family:'Courier New',monospace;font-size:11px;resize:vertical;outline:none;line-height:1.5;" onfocus="this.select()"></textarea>
+        <button class="btn-shake" onclick="copyCode()" style="margin-top:10px;">📋 复制代码</button>
+        <span id="copyOK" style="display:none;color:var(--green);font-size:13px;margin-left:8px;">已复制!</span>
     </div>
 </body>
 </html>

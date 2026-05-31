@@ -383,6 +383,25 @@
         .page-right .delete-icon { left: 15px; right: auto; }
         .page-left:hover .delete-icon, .page-right:hover .delete-icon { opacity: 0.5; }
         .delete-icon:hover { opacity: 1 !important; background: #fff0f0; }
+        /* 编辑按钮 */
+        .edit-icon-btn {
+            position: absolute;
+            top: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.2s;
+            background: none;
+            border: none;
+            color: var(--accent);
+            padding: 5px 10px;
+            border-radius: 10px;
+            z-index: 6;
+        }
+        .page-left .edit-icon-btn { right: 40px; }
+        .page-right .edit-icon-btn { right: 40px; }
+        .page-left:hover .edit-icon-btn, .page-right:hover .edit-icon-btn { opacity: 0.5; }
+        .edit-icon-btn:hover { opacity: 1 !important; background: #f0faf0; }
 
         @media (max-width: 700px) {
             .book { max-width: 100%; min-height: 380px; }
@@ -403,8 +422,11 @@
             .page-left .flip-hint { left: 8px; }
             .page-right .flip-hint { right: 8px; }
             .delete-icon { font-size: 12px; top: 4px; padding: 2px 6px; }
+            .edit-icon-btn { font-size: 12px; top: 4px; padding: 2px 6px; opacity: 0.5 !important; }
             .page-left .delete-icon { right: 4px; }
             .page-right .delete-icon { left: 4px; }
+            .page-left .edit-icon-btn { right: 26px; }
+            .page-right .edit-icon-btn { left: 26px; }
             .page-num { font-size: 10px; bottom: 8px; }
             .page-left .page-num { left: 8px; }
             .page-right .page-num { right: 8px; }
@@ -443,6 +465,7 @@
                         </div>
                     </div>
                     <button class="delete-icon" title="删除此卡" onclick="event.stopPropagation();deleteCard('left')">🗑️</button>
+                    <button class="edit-icon-btn" id="leftEditBtn" title="编辑此卡" onclick="event.stopPropagation();editCurrentCard('left')">✏️</button>
                     <span class="page-num" id="leftPageNum"></span>
                 </div>
 
@@ -464,6 +487,7 @@
                         </div>
                     </div>
                     <button class="delete-icon" title="删除此卡" onclick="event.stopPropagation();deleteCard('right')">🗑️</button>
+                    <button class="edit-icon-btn" id="rightEditBtn" title="编辑此卡" onclick="event.stopPropagation();editCurrentCard('right')">✏️</button>
                     <span class="page-num" id="rightPageNum"></span>
                 </div>
             </div>
@@ -574,6 +598,7 @@
             const backTitle = document.getElementById(side + 'BackTitle');
             const backContent = document.getElementById(side + 'BackContent');
             const deleteBtn = document.getElementById('page' + (side === 'left' ? 'Left' : 'Right')).querySelector('.delete-icon');
+            const editBtn = document.getElementById(side + 'EditBtn');
             const pageEl = document.getElementById('page' + (side === 'left' ? 'Left' : 'Right'));
             const flipHint = pageEl.querySelector('.flip-hint');
 
@@ -594,6 +619,7 @@
                     flipInner.classList.remove('flipped');
                 }
                 deleteBtn.style.display = 'block';
+                editBtn.style.display = 'block';
                 flipHint.style.display = 'block';
                 pageEl.style.cursor = 'pointer';
             } else {
@@ -603,6 +629,7 @@
                 frontEl.querySelector('.card-hint').textContent = '添加更多卡片来填满';
                 flipInner.classList.remove('flipped');
                 deleteBtn.style.display = 'none';
+                editBtn.style.display = 'none';
                 flipHint.style.display = 'none';
                 pageEl.style.cursor = 'default';
                 if (side === 'left') leftFlipped = false;
@@ -728,6 +755,13 @@
                 if (currentPage >= totalPages && currentPage > 0) currentPage--;
                 renderBook();
             }
+        }
+
+        // ============ 编辑卡片 ============
+        function editCurrentCard(side) {
+            const cardIndex = side === 'left' ? currentPage * 2 : currentPage * 2 + 1;
+            if (cardIndex >= cards.length) return;
+            showAddModal(cardIndex);
         }
 
         // ============ 弹窗 ============
