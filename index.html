@@ -497,11 +497,19 @@
 
         // ============ 导入导出 ============
         function exportData() {
+            // 收集所有 localStorage 数据
+            var allData = {};
+            for (var i = 0; i < localStorage.length; i++) {
+                var key = localStorage.key(i);
+                try { allData[key] = JSON.parse(localStorage.getItem(key)); }
+                catch(e) { allData[key] = localStorage.getItem(key); }
+            }
             const data = {
                 apps: loadApps(),
                 harvestCount: loadHarvestCount(),
                 theme: currentTheme,
-                exportedAt: new Date().toISOString()
+                exportedAt: new Date().toISOString(),
+                _allStorage: allData  // 所有工具的个人数据
             };
             const jsonStr = JSON.stringify(data, null, 2);
             const blob = new Blob(['\uFEFF' + jsonStr], {type: 'application/json;charset=utf-8'});
@@ -554,19 +562,31 @@
                         }
                     }
                     saveApps(merged);
+                    if (data._allStorage) {
+                        for (var key2 in data._allStorage) {
+                            var val2 = data._allStorage[key2];
+                            localStorage.setItem(key2, typeof val2 === 'string' ? val2 : JSON.stringify(val2));
+                        }
+                    }
                     apps = loadApps();
                     if (data.harvestCount) localStorage.setItem('harvestCount', data.harvestCount);
                     if (data.theme) applyTheme(data.theme);
                     renderLibrary();
-                    alert('✅ 追加成功！当前共 ' + apps.length + ' 个应用（跳过重名）');
+                    alert('追加成功！当前共 ' + apps.length + ' 个应用');
                 } else {
                     if (!confirm('覆盖导入将替换全部数据（共 ' + data.apps.length + ' 个应用），确定？')) return;
+                    if (data._allStorage) {
+                        for (var key3 in data._allStorage) {
+                            var val3 = data._allStorage[key3];
+                            localStorage.setItem(key3, typeof val3 === 'string' ? val3 : JSON.stringify(val3));
+                        }
+                    }
                     saveApps(data.apps);
                     apps = loadApps();
                     if (data.harvestCount !== undefined) localStorage.setItem('harvestCount', data.harvestCount);
                     if (data.theme) applyTheme(data.theme);
                     renderLibrary();
-                    alert('✅ 覆盖导入成功！共 ' + data.apps.length + ' 个应用');
+                    alert('覆盖导入成功！共 ' + data.apps.length + ' 个应用');
                 }
                 closePasteImport();
                 document.getElementById('pasteTextarea').value = '';
@@ -581,7 +601,15 @@
                     alert('数据格式不正确，请检查后再试。');
                     return;
                 }
-                if (confirm('导入将覆盖当前数据（共 ' + data.apps.length + ' 个应用），确定继续吗？')) {
+                var extra = data._allStorage ? '（含故事/纪念/愿望等个人数据）' : '（仅工具列表）';
+                if (confirm('导入将覆盖当前数据（共 ' + data.apps.length + ' 个应用）' + extra + '，确定继续吗？')) {
+                    // 恢复所有 localStorage 数据
+                    if (data._allStorage) {
+                        for (var key in data._allStorage) {
+                            var val = data._allStorage[key];
+                            localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
+                        }
+                    }
                     saveApps(data.apps);
                     apps = loadApps();
                     if (data.harvestCount !== undefined) {
@@ -591,7 +619,7 @@
                         applyTheme(data.theme);
                     }
                     renderLibrary();
-                    alert('✅ 导入成功！共恢复了 ' + data.apps.length + ' 个应用');
+                    alert('导入成功！共 ' + data.apps.length + ' 个应用，含个人数据');
                 }
             } catch (err) {
                 alert('数据解析失败，请检查JSON格式是否正确。');
