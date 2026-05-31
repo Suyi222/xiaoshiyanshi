@@ -1,0 +1,35 @@
+name: Build APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with: { node-version: '20' }
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with: { distribution: 'temurin', java-version: '17' }
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Generate APK with Bubblewrap
+        run: |
+          npx @bubblewrap/cli init --manifest https://suyi222.github.io/xiaoshiyanshi/manifest.json --directory ./bw
+          cd bw
+          npx @bubblewrap/cli build
+          cp app/build/outputs/apk/release/app-release-unsigned.apk ../xiaoyuanding.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: xiaoyuanding
+          path: xiaoyuanding.apk
