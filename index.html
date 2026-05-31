@@ -1261,6 +1261,22 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
         }
+        // 安装提示
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            window._installPrompt = e;
+            var bar = document.createElement('div');
+            bar.id = 'installBar';
+            bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:2px solid var(--green);padding:12px 20px;display:flex;align-items:center;gap:10px;z-index:300;font-size:14px;box-shadow:0 -4px 20px rgba(0,0,0,.1)';
+            bar.innerHTML = '<span style="flex:1">📱 安装到手机桌面，像App一样使用！</span><button onclick="installPWA()" style="background:var(--green);color:#fff;border:none;padding:8px 18px;border-radius:20px;font-weight:bold;cursor:pointer;font-family:inherit">安装</button><button onclick="this.parentNode.remove()" style="background:none;border:none;color:#ccc;font-size:18px;cursor:pointer">✕</button>';
+            document.body.appendChild(bar);
+        });
+        function installPWA() {
+            if (window._installPrompt) {
+                window._installPrompt.prompt();
+                window._installPrompt = null;
+            }
+        }
     </script>
     <!-- 遮罩 -->
     <div class="overlay" id="overlay" onclick="closeDivination()"></div>
