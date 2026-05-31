@@ -713,16 +713,27 @@
             document.getElementById('codeOverlay').classList.remove('show');
         }
         function copyCode() {
-            const ta = document.getElementById('codeTextarea');
-            ta.select();
-            navigator.clipboard.writeText(ta.value).then(function() {
-                document.getElementById('copyOK').style.display = 'inline';
-                setTimeout(function() { document.getElementById('copyOK').style.display = 'none'; }, 2000);
-            }).catch(function() {
+            const code = document.getElementById('codeTextarea').value;
+            // 方法1: 传统可靠方式（兼容所有手机浏览器）
+            const ta = document.createElement('textarea');
+            ta.value = code;
+            ta.style.position = 'fixed'; ta.style.left = '-9999px'; ta.style.top = '0';
+            document.body.appendChild(ta);
+            ta.focus(); ta.select();
+            try {
                 document.execCommand('copy');
                 document.getElementById('copyOK').style.display = 'inline';
                 setTimeout(function() { document.getElementById('copyOK').style.display = 'none'; }, 2000);
-            });
+            } catch(e) {
+                // 方法2: 现代API兜底
+                navigator.clipboard.writeText(code).then(function() {
+                    document.getElementById('copyOK').style.display = 'inline';
+                    setTimeout(function() { document.getElementById('copyOK').style.display = 'none'; }, 2000);
+                }).catch(function() {
+                    alert('复制失败，请手动长按选择代码后复制');
+                });
+            }
+            document.body.removeChild(ta);
         }
 
         // ============ 分类折叠 ============
